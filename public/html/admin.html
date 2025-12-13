@@ -5,109 +5,205 @@
     <title>Admin | Nova Store</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../css/styles.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 </head>
 <body>
 
 <nav class="navbar scrolled">
     <div class="nav-content">
-        <div class="logo">NOVA STORE - ADMIN</div>
+        <div class="logo">NOVA STORE <span style="color:var(--secondary); font-size:0.8em;">ADMIN</span></div>
         <ul class="nav-links">
-            <li><a href="/">Inicio</a></li>
-            <li><a href="/auth/logout">Salir</a></li>
+            <li><a href="/">Ir a Tienda</a></li>
+            <li><a href="/auth/logout" class="btn-nav">Cerrar Sesión</a></li>
         </ul>
     </div>
 </nav>
 
-<section class="services-section">
-    <div class="section-header">
-        <h2>Panel de Administración</h2>
-        <p>Gestión de usuarios y productos</p>
+<section class="admin-container">
+    <div class="admin-header">
+        <h2>Panel de Control</h2>
+        <p>Administra tu negocio desde un solo lugar</p>
     </div>
 
-    <!-- USUARIOS -->
-    <h3 style="margin-bottom:1rem;">Usuarios</h3>
-    <div id="users" class="cards-grid"></div>
-
-    <!-- PRODUCTOS -->
-    <h3 style="margin:4rem 0 1rem;">Productos</h3>
-
-    <div class="card" style="max-width:500px; margin-bottom:2rem;">
-        <input id="pNombre" placeholder="Nombre del producto" />
-        <input id="pDesc" placeholder="Descripción" />
-        <input id="pPrecio" type="number" placeholder="Precio" />
-        <button class="btn-primary" onclick="crearProducto()">Agregar producto</button>
+    <div class="admin-tabs">
+        <button class="tab-btn active" onclick="cargarVista('clientes')">
+            <i class="fa-solid fa-users"></i> Clientes
+        </button>
+        <button class="tab-btn" onclick="cargarVista('vendedores')">
+            <i class="fa-solid fa-user-tie"></i> Vendedores
+        </button>
+        <button class="tab-btn" onclick="cargarVista('productos')">
+            <i class="fa-solid fa-box-open"></i> Productos
+        </button>
     </div>
 
-    <div id="products" class="cards-grid"></div>
+    <div class="table-container">
+        
+        <div id="action-bar" class="action-bar"></div>
+
+        <table class="data-table">
+            <thead id="table-head">
+                </thead>
+            <tbody id="table-body">
+                </tbody>
+        </table>
+    </div>
 </section>
 
 <script>
-async function cargarUsuarios() {
-    const res = await fetch('/admin/users');
-    const users = await res.json();
+    // Variable para saber qué estamos viendo actualmente
+    let vistaActual = 'clientes';
 
-    const cont = document.getElementById('users');
-    cont.innerHTML = '';
+    // Función principal que controla qué ver
+    async function cargarVista(vista) {
+        vistaActual = vista;
+        
+        // 1. Actualizar estilo de botones (Tabs)
+        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.closest('button').classList.add('active'); // Nota: esto asume click directo, ajustaremos luego
 
-    users.forEach(u => {
-        cont.innerHTML += `
-            <div class="card">
-                <strong>${u.nombre}</strong>
-                <p>${u.email}</p>
-                <p>Rol: ${u.rol}</p>
-                ${u.rol !== 'admin' ? 
-                    `<button onclick="eliminarUsuario(${u.id})">Eliminar</button>` 
-                    : ''}
-            </div>
-        `;
-    });
-}
+        const tableHead = document.getElementById('table-head');
+        const tableBody = document.getElementById('table-body');
+        const actionBar = document.getElementById('action-bar');
+        
+        tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Cargando datos...</td></tr>';
+        actionBar.innerHTML = ''; // Limpiar barra de acciones
 
-async function eliminarUsuario(id) {
-    if (!confirm('¿Eliminar usuario?')) return;
-    await fetch('/admin/users/' + id, { method: 'DELETE' });
-    cargarUsuarios();
-}
+        try {
+            if (vista === 'clientes') {
+                // Configurar Tabla para Clientes
+                tableHead.innerHTML = `
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Email</th>
+                        <th>Rol</th>
+                        <th>Acciones</th>
+                    </tr>
+                `;
+                const res = await fetch('/admin/users?rol=cliente');
+                const data = await res.json();
+                renderUsers(data);
 
-async function cargarProductos() {
-    const res = await fetch('/products');
-    const products = await res.json();
+            } else if (vista === 'vendedores') {
+                // Configurar Tabla para Vendedores
+                tableHead.innerHTML = `
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Email</th>
+                        <th>Ventas (Simulado)</th>
+                        <th>Acciones</th>
+                    </tr>
+                `;
+                const res = await fetch('/admin/users?rol=vendedor');
+                const data = await res.json();
+                renderUsers(data);
 
-    const cont = document.getElementById('products');
-    cont.innerHTML = '';
+            } else if (vista === 'productos') {
+                // Configurar Tabla para Productos
+                // Agregamos el formulario de crear producto arriba
+                actionBar.innerHTML = `
+                    <div class="inline-form">
+                        <input id="pNombre" placeholder="Nombre" />
+                        <input id="pDesc" placeholder="Descripción" />
+                        <input id="pPrecio" type="number" placeholder="$" style="width:80px;" />
+                        <button class="btn-primary" onclick="crearProducto()">+ Agregar</button>
+                    </div>
+                `;
 
-    products.forEach(p => {
-        cont.innerHTML += `
-            <div class="card">
-                <strong>${p.nombre}</strong>
-                <p>${p.descripcion}</p>
-                <p>$${p.precio}</p>
-            </div>
-        `;
-    });
-}
-
-async function crearProducto() {
-    const nombre = pNombre.value;
-    const descripcion = pDesc.value;
-    const precio = pPrecio.value;
-
-    const res = await fetch('/products', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ nombre, descripcion, precio })
-    });
-
-    if (res.ok) {
-        pNombre.value = '';
-        pDesc.value = '';
-        pPrecio.value = '';
-        cargarProductos();
+                tableHead.innerHTML = `
+                    <tr>
+                        <th>ID</th>
+                        <th>Imagen</th>
+                        <th>Producto</th>
+                        <th>Descripción</th>
+                        <th>Precio</th>
+                        <th>Acciones</th>
+                    </tr>
+                `;
+                const res = await fetch('/products'); // Asegúrate que esta ruta exista
+                const data = await res.json();
+                renderProducts(data);
+            }
+        } catch (error) {
+            console.error(error);
+            tableBody.innerHTML = '<tr><td colspan="5">Error al cargar datos</td></tr>';
+        }
     }
-}
 
-cargarUsuarios();
-cargarProductos();
+    // Renderizar Usuarios (Clientes y Vendedores)
+    function renderUsers(users) {
+        const tbody = document.getElementById('table-body');
+        tbody.innerHTML = '';
+        
+        if(users.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">No hay registros</td></tr>';
+            return;
+        }
+
+        users.forEach(u => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>#${u.id}</td>
+                    <td><div class="user-cell"><strong>${u.nombre}</strong></div></td>
+                    <td>${u.email}</td>
+                    <td><span class="badge ${u.rol}">${u.rol}</span></td>
+                    <td>
+                        <button class="btn-delete" onclick="eliminarUsuario(${u.id})">Eliminar</button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    // Renderizar Productos
+    function renderProducts(products) {
+        const tbody = document.getElementById('table-body');
+        tbody.innerHTML = '';
+
+        products.forEach(p => {
+            tbody.innerHTML += `
+                <tr>
+                    <td>#${p.id}</td>
+                    <td><div class="img-placeholder">IMG</div></td>
+                    <td><strong>${p.nombre}</strong></td>
+                    <td>${p.descripcion || '-'}</td>
+                    <td class="price">$${p.precio}</td>
+                    <td>
+                        <button class="btn-delete" onclick="alert('Función pendiente')">Borrar</button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    // Lógica para crear producto
+    async function crearProducto() {
+        const nombre = document.getElementById('pNombre').value;
+        const descripcion = document.getElementById('pDesc').value;
+        const precio = document.getElementById('pPrecio').value;
+
+        if(!nombre || !precio) return alert("Llena los datos");
+
+        await fetch('/products', {
+            method: 'POST',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ nombre, descripcion, precio })
+        });
+        cargarVista('productos'); // Recargar tabla
+    }
+
+    async function eliminarUsuario(id) {
+        if (!confirm('¿Seguro de eliminar este usuario?')) return;
+        await fetch('/admin/users/' + id, { method: 'DELETE' });
+        // Recargar la vista actual para ver cambios
+        cargarVista(vistaActual);
+    }
+
+    // Inicializar cargando clientes
+    // Truco para asignar el evento active a los botones al cargar
+    document.querySelectorAll('.tab-btn')[0].click(); 
 </script>
 
 </body>

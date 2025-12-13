@@ -224,3 +224,71 @@ body {
     color: var(--gray-text);
     font-size: 0.9rem;
 }
+
+/* ===== Formularios ===== */
+.form-container {
+    background: var(--card-bg);
+    padding: 2.5rem;
+    border-radius: 14px;
+    width: 100%;
+    max-width: 420px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+}
+
+.form-container h2 {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.form-group {
+    margin-bottom: 1.4rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+    color: var(--gray-text);
+}
+
+.form-group input {
+    width: 100%;
+    padding: 14px;
+    border-radius: 8px;
+    border: 1px solid #334155;
+    background: #020617;
+    color: var(--light-text);
+    font-size: 1rem;
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--primary);
+}
+
+.form-btn {
+    width: 100%;
+    padding: 14px;
+    font-size: 1rem;
+    border-radius: 8px;
+    background: linear-gradient(90deg, var(--primary), var(--secondary));
+    color: white;
+    border: none;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+.form-btn:hover {
+    opacity: 0.9;
+}
+
+.form-footer {
+    text-align: center;
+    margin-top: 1.5rem;
+    color: var(--gray-text);
+}
+
+.form-footer a {
+    color: var(--secondary);
+    text-decoration: none;
+}

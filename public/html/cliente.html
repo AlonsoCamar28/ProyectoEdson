@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Catálogo | Nova Store</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+<nav class="navbar scrolled">
+    <div class="nav-content">
+        <div class="logo">NOVA STORE</div>
+        <ul class="nav-links">
+            <li><a href="/">Inicio</a></li>
+            <li><a href="/auth/logout">Salir</a></li>
+        </ul>
+    </div>
+</nav>
+
+<section class="services-section">
+    <div class="section-header">
+        <h2>Catálogo de Productos</h2>
+        <p>Explora nuestros productos disponibles</p>
+    </div>
+
+    <div id="products" class="cards-grid"></div>
+</section>
+
+<script>
+async function cargarProductos() {
+    const res = await fetch('/products');
+    const products = await res.json();
+
+    const contenedor = document.getElementById('products');
+    contenedor.innerHTML = '';
+
+    products.forEach(p => {
+        contenedor.innerHTML += `
+            <div class="card">
+                <h3>${p.nombre}</h3>
+                <p>${p.descripcion}</p>
+                <p><strong>$${p.precio}</strong></p>
+                <button class="btn-primary" onclick="comprar(${p.id})">
+                    Comprar
+                </button>
+            </div>
+        `;
+    });
+}
+
+async function comprar(productId) {
+    const res = await fetch('/orders', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ productId, cantidad: 1 })
+    });
+
+    if (res.ok) {
+        alert('Producto agregado a tus compras');
+    } else {
+        alert('Error al comprar');
+    }
+}
+
+cargarProductos();
+</script>
+
+</body>
+</html>

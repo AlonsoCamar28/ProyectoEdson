@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin | Nova Store</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/styles.css">
+</head>
+<body>
+
+<nav class="navbar scrolled">
+    <div class="nav-content">
+        <div class="logo">NOVA STORE - ADMIN</div>
+        <ul class="nav-links">
+            <li><a href="/">Inicio</a></li>
+            <li><a href="/auth/logout">Salir</a></li>
+        </ul>
+    </div>
+</nav>
+
+<section class="services-section">
+    <div class="section-header">
+        <h2>Panel de Administración</h2>
+        <p>Gestión de usuarios y productos</p>
+    </div>
+
+    <!-- USUARIOS -->
+    <h3 style="margin-bottom:1rem;">Usuarios</h3>
+    <div id="users" class="cards-grid"></div>
+
+    <!-- PRODUCTOS -->
+    <h3 style="margin:4rem 0 1rem;">Productos</h3>
+
+    <div class="card" style="max-width:500px; margin-bottom:2rem;">
+        <input id="pNombre" placeholder="Nombre del producto" />
+        <input id="pDesc" placeholder="Descripción" />
+        <input id="pPrecio" type="number" placeholder="Precio" />
+        <button class="btn-primary" onclick="crearProducto()">Agregar producto</button>
+    </div>
+
+    <div id="products" class="cards-grid"></div>
+</section>
+
+<script>
+async function cargarUsuarios() {
+    const res = await fetch('/admin/users');
+    const users = await res.json();
+
+    const cont = document.getElementById('users');
+    cont.innerHTML = '';
+
+    users.forEach(u => {
+        cont.innerHTML += `
+            <div class="card">
+                <strong>${u.nombre}</strong>
+                <p>${u.email}</p>
+                <p>Rol: ${u.rol}</p>
+                ${u.rol !== 'admin' ? 
+                    `<button onclick="eliminarUsuario(${u.id})">Eliminar</button>` 
+                    : ''}
+            </div>
+        `;
+    });
+}
+
+async function eliminarUsuario(id) {
+    if (!confirm('¿Eliminar usuario?')) return;
+    await fetch('/admin/users/' + id, { method: 'DELETE' });
+    cargarUsuarios();
+}
+
+async function cargarProductos() {
+    const res = await fetch('/products');
+    const products = await res.json();
+
+    const cont = document.getElementById('products');
+    cont.innerHTML = '';
+
+    products.forEach(p => {
+        cont.innerHTML += `
+            <div class="card">
+                <strong>${p.nombre}</strong>
+                <p>${p.descripcion}</p>
+                <p>$${p.precio}</p>
+            </div>
+        `;
+    });
+}
+
+async function crearProducto() {
+    const nombre = pNombre.value;
+    const descripcion = pDesc.value;
+    const precio = pPrecio.value;
+
+    const res = await fetch('/products', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify({ nombre, descripcion, precio })
+    });
+
+    if (res.ok) {
+        pNombre.value = '';
+        pDesc.value = '';
+        pPrecio.value = '';
+        cargarProductos();
+    }
+}
+
+cargarUsuarios();
+cargarProductos();
+</script>
+
+</body>
+</html>

@@ -1,19 +1,34 @@
-    const express = require('express');
+const express = require('express');
 const path = require('path');
+const session = require('express-session');
+
+
 const app = express();
 const PORT = 3000;
 
-// 1. Configurar carpeta de archivos estáticos (CSS, JS Cliente, imágenes)
-// Esto permite que el HTML acceda a /css y /js sin problemas
+// Middlewares
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+app.use(session({
+  secret: 'novastore_secret',
+  resave: false,
+  saveUninitialized: true
+}));
+
+// Archivos estáticos
 app.use(express.static(path.join(__dirname, 'public')));
 
-// 2. Ruta Principal: Cuando entren a localhost:3000, enviamos el HTML
+// Rutas
+app.use('/auth', require('./routes/auth.routes'));
+app.use('/admin', require('./routes/admin.routes'));
+app.use('/products', require('./routes/products.routes'));
+
+// Landing
 app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public', 'html', 'index.html'));
+  res.sendFile(path.join(__dirname, 'public/html/index.html'));
 });
 
-// 3. Iniciar el servidor
 app.listen(PORT, () => {
-    console.log(`Servidor corriendo en: http://localhost:${PORT}`);
-    console.log('Presiona Ctrl + C para detenerlo');
+  console.log(`🚀 http://localhost:${PORT}`);
 });

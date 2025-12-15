@@ -11,5 +11,7 @@ const adminController = require('../controllers/adminController');
 router.get('/users', adminController.getUsers);
 router.delete('/users/:id', adminController.deleteUser);
 router.post('/users', adminController.createUser);
+router.put('/users/:id', adminController.updateUser);
+
 
 module.exports = router;

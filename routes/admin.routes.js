@@ -12,5 +12,6 @@ router.delete('/users/:id', isAdmin, adminController.deleteUser);
 // Productos
 router.post('/products', isAdmin, productController.create);
 router.post('/users', adminController.createUser);
+router.put('/users/:id', adminController.updateUser);
 
 module.exports = router;

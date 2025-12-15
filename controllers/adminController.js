@@ -68,3 +68,41 @@ exports.createUser = async (req, res) => {
         res.status(500).send('Error en el servidor al encriptar');
     }
 };
+
+
+
+exports.updateUser = async (req, res) => {
+    const { id } = req.params;
+    const { nombre, email, password, rol } = req.body;
+
+    if (!nombre || !email || !rol) {
+        return res.status(400).send('Faltan datos');
+    }
+
+    try {
+        let sql = '';
+        let params = [];
+
+        // Si el usuario escribió una nueva contraseña, la encriptamos y actualizamos todo
+        if (password && password.trim() !== '') {
+            const hashedPassword = await bcrypt.hash(password, 10);
+            sql = 'UPDATE users SET nombre = ?, email = ?, password = ?, rol = ? WHERE id = ?';
+            params = [nombre, email, hashedPassword, rol, id];
+        } else {
+            // Si NO escribió contraseña, mantenemos la vieja (no tocamos el campo password)
+            sql = 'UPDATE users SET nombre = ?, email = ?, rol = ? WHERE id = ?';
+            params = [nombre, email, rol, id];
+        }
+
+        db.query(sql, params, (err, result) => {
+            if (err) {
+                console.error(err);
+                return res.status(500).send('Error al actualizar');
+            }
+            res.send('Actualizado correctamente');
+        });
+    } catch (error) {
+        console.error(error);
+        res.status(500).send('Error servidor');
+    }
+};

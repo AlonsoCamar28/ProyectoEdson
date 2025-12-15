@@ -56,81 +56,106 @@
 
     // Función principal que controla qué ver
     async function cargarVista(vista) {
-        vistaActual = vista;
-        
-        // 1. Actualizar estilo de botones (Tabs)
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        event.target.closest('button').classList.add('active'); // Nota: esto asume click directo, ajustaremos luego
-
-        const tableHead = document.getElementById('table-head');
-        const tableBody = document.getElementById('table-body');
-        const actionBar = document.getElementById('action-bar');
-        
-        tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Cargando datos...</td></tr>';
-        actionBar.innerHTML = ''; // Limpiar barra de acciones
-
-        try {
-            if (vista === 'clientes') {
-                // Configurar Tabla para Clientes
-                tableHead.innerHTML = `
-                    <tr>
-                        <th>ID</th>
-                        <th>Nombre</th>
-                        <th>Email</th>
-                        <th>Rol</th>
-                        <th>Acciones</th>
-                    </tr>
-                `;
-                const res = await fetch('/admin/users?rol=cliente');
-                const data = await res.json();
-                renderUsers(data);
-
-            } else if (vista === 'vendedores') {
-                // Configurar Tabla para Vendedores
-                tableHead.innerHTML = `
-                    <tr>
-                        <th>ID</th>
-                        <th>Nombre</th>
-                        <th>Email</th>
-                        <th>Ventas (Simulado)</th>
-                        <th>Acciones</th>
-                    </tr>
-                `;
-                const res = await fetch('/admin/users?rol=vendedor');
-                const data = await res.json();
-                renderUsers(data);
-
-            } else if (vista === 'productos') {
-                // Configurar Tabla para Productos
-                // Agregamos el formulario de crear producto arriba
-                actionBar.innerHTML = `
-                    <div class="inline-form">
-                        <input id="pNombre" placeholder="Nombre" />
-                        <input id="pDesc" placeholder="Descripción" />
-                        <input id="pPrecio" type="number" placeholder="$" style="width:80px;" />
-                        <button class="btn-primary" onclick="crearProducto()">+ Agregar</button>
-                    </div>
-                `;
-
-                tableHead.innerHTML = `
-                    <tr>
-                        <th>ID</th>
-                        <th>Imagen</th>
-                        <th>Producto</th>
-                        <th>Descripción</th>
-                        <th>Precio</th>
-                        <th>Acciones</th>
-                    </tr>
-                `;
-                const res = await fetch('/products'); // Asegúrate que esta ruta exista
-                const data = await res.json();
-                renderProducts(data);
-            }
-        } catch (error) {
-            console.error(error);
-            tableBody.innerHTML = '<tr><td colspan="5">Error al cargar datos</td></tr>';
-        }
+    vistaActual = vista;
+    
+    // 1. Actualizar estilo de botones (Tabs)
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    // Nota: Usamos una validación por si el evento no viene directo del click
+    if(event && event.target) {
+        const btn = event.target.closest('button');
+        if(btn) btn.classList.add('active');
     }
+
+    const tableHead = document.getElementById('table-head');
+    const tableBody = document.getElementById('table-body');
+    const actionBar = document.getElementById('action-bar');
+    
+    // Limpiar tabla y mostrar carga
+    tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Cargando datos...</td></tr>';
+    actionBar.innerHTML = ''; 
+
+    try {
+        if (vista === 'clientes') {
+            // --- NUEVO: Formulario para crear Cliente ---
+            actionBar.innerHTML = `
+                <div class="inline-form">
+                    <input id="uNombre" placeholder="Nombre completo" />
+                    <input id="uEmail" placeholder="Correo electrónico" />
+                    <input id="uPass" type="password" placeholder="Contraseña" />
+                    <button class="btn-primary" onclick="crearUsuario('cliente')">+ Agregar</button>
+                </div>
+            `;
+
+            // Configurar Tabla para Clientes
+            tableHead.innerHTML = `
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Rol</th>
+                    <th>Acciones</th>
+                </tr>
+            `;
+            const res = await fetch('/admin/users?rol=cliente');
+            const data = await res.json();
+            renderUsers(data);
+
+        } else if (vista === 'vendedores') {
+            // --- NUEVO: Formulario para crear Vendedor ---
+            actionBar.innerHTML = `
+                <div class="inline-form">
+                    <input id="uNombre" placeholder="Nombre Vendedor" />
+                    <input id="uEmail" placeholder="Correo electrónico" />
+                    <input id="uPass" type="password" placeholder="Contraseña" />
+                    <button class="btn-primary" onclick="crearUsuario('vendedor')">+ Agregar</button>
+                </div>
+            `;
+
+            // Configurar Tabla para Vendedores
+            tableHead.innerHTML = `
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Ventas (Simulado)</th>
+                    <th>Acciones</th>
+                </tr>
+            `;
+            const res = await fetch('/admin/users?rol=vendedor');
+            const data = await res.json();
+            renderUsers(data);
+
+        } else if (vista === 'productos') {
+            // --- Formulario para crear Producto (YA EXISTENTE) ---
+            actionBar.innerHTML = `
+                <div class="inline-form">
+                    <input id="pNombre" placeholder="Nombre" />
+                    <input id="pDesc" placeholder="Descripción" />
+                    <input id="pPrecio" type="number" placeholder="$" style="width:80px;" />
+                    <button class="btn-primary" onclick="crearProducto()">+ Agregar</button>
+                </div>
+            `;
+
+            // Configurar Tabla para Productos
+            tableHead.innerHTML = `
+                <tr>
+                    <th>ID</th>
+                    <th>Imagen</th>
+                    <th>Producto</th>
+                    <th>Descripción</th>
+                    <th>Precio</th>
+                    <th>Acciones</th>
+                </tr>
+            `;
+            const res = await fetch('/products');
+            const data = await res.json();
+            renderProducts(data);
+        }
+    } catch (error) {
+        console.error(error);
+        tableBody.innerHTML = '<tr><td colspan="5">Error al cargar datos</td></tr>';
+    }
+}
 
     // Renderizar Usuarios (Clientes y Vendedores)
     function renderUsers(users) {
@@ -178,6 +203,7 @@
         });
     }
 
+
     // Lógica para crear producto
     async function crearProducto() {
         const nombre = document.getElementById('pNombre').value;
@@ -204,7 +230,52 @@
     // Inicializar cargando clientes
     // Truco para asignar el evento active a los botones al cargar
     document.querySelectorAll('.tab-btn')[0].click(); 
+
+
+
+
+
+    // Lógica para crear Usuario (Cliente o Vendedor)
+    async function crearUsuario(rolAsignado) {
+        const nombre = document.getElementById('uNombre').value;
+        const email = document.getElementById('uEmail').value;
+        const password = document.getElementById('uPass').value;
+
+        if(!nombre || !email || !password) return alert("Por favor completa todos los campos");
+
+        try {
+            const res = await fetch('/admin/users', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ 
+                    nombre: nombre, 
+                    email: email, 
+                    password: password, 
+                    rol: rolAsignado 
+                })
+            });
+
+            if(res.ok) {
+                // Si se creó bien, recargamos la vista actual para ver al nuevo usuario
+                cargarVista(vistaActual);
+            } else {
+                // Si hubo error (ej: correo duplicado), leemos el mensaje del servidor
+                const msg = await res.text();
+                alert("Error: " + msg);
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Error de conexión");
+        }
+    }
+
+
 </script>
+
+
+
+
+
 
 </body>
 </html>

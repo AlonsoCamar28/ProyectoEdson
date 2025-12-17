@@ -610,3 +610,50 @@ body {
     font-weight: bold;
     color: var(--secondary);
 }
+
+.catalog-layout {
+  display: grid;
+  grid-template-columns: 250px 1fr;
+  gap: 2rem;
+}
+
+.sidebar {
+  background: var(--card-bg);
+  padding: 1.5rem;
+  border-radius: 12px;
+  height: fit-content;
+}
+
+.sidebar h3 {
+  margin-bottom: 1rem;
+}
+
+.sidebar ul {
+  list-style: none;
+}
+
+.sidebar li {
+  padding: 10px;
+  cursor: pointer;
+  border-radius: 6px;
+  color: var(--gray-text);
+  transition: 0.2s;
+}
+
+.sidebar li:hover {
+  background: rgba(255,255,255,0.05);
+  color: white;
+}
+
+.services-section {
+  margin-top: 120px;
+}
+
+.product-img {
+  width: 100%;
+  height: 180px;
+  object-fit: cover; /* NO se deforma */
+  border-radius: 10px;
+  margin-bottom: 1rem;
+  background: #0f172a;
+}

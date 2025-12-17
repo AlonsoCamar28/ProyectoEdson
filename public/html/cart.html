@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Carrito | Nova Store</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="../css/styles.css">
+
+    <style>
+        .cart-container {
+            max-width: 900px;
+            margin: 140px auto 60px;
+            background: var(--card-bg);
+            padding: 2.5rem;
+            border-radius: 16px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+        }
+
+        .cart-container h2 {
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .cart-item {
+            display: grid;
+            grid-template-columns: 1fr 120px 120px;
+            gap: 1rem;
+            align-items: center;
+            padding: 1rem 0;
+            border-bottom: 1px solid #334155;
+        }
+
+        .cart-item:last-child {
+            border-bottom: none;
+        }
+
+        .cart-item h4 {
+            margin: 0;
+        }
+
+        .cart-item .price {
+            color: var(--secondary);
+            font-weight: bold;
+        }
+
+        .btn-remove {
+            background: transparent;
+            border: 1px solid #ef4444;
+            color: #ef4444;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        .btn-remove:hover {
+            background: #ef4444;
+            color: white;
+        }
+
+        .cart-total {
+            margin-top: 2rem;
+            text-align: right;
+            font-size: 1.4rem;
+            font-weight: bold;
+        }
+
+        .cart-actions {
+            margin-top: 2rem;
+            display: flex;
+            justify-content: space-between;
+            gap: 1rem;
+        }
+
+        .cart-actions button {
+            flex: 1;
+            padding: 14px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            border: none;
+        }
+
+        .btn-checkout {
+            background: linear-gradient(90deg, var(--primary), var(--secondary));
+            color: white;
+        }
+
+        .btn-back {
+            background: transparent;
+            border: 1px solid var(--gray-text);
+            color: var(--light-text);
+        }
+
+        .empty-cart {
+            text-align: center;
+            padding: 4rem 1rem;
+            color: var(--gray-text);
+        }
+    </style>
+</head>
+<body>
+
+<nav class="navbar scrolled">
+    <div class="nav-content">
+        <div class="logo">NOVA STORE</div>
+        <ul class="nav-links">
+            <li><a href="/html/cliente.html">⬅ Volver</a></li>
+            <li><a href="/auth/logout">Salir</a></li>
+        </ul>
+    </div>
+</nav>
+
+<div class="cart-container">
+    <h2>🛒 Mi Carrito</h2>
+
+    <div id="cartItems"></div>
+
+    <div id="cartTotal" class="cart-total"></div>
+
+    <div class="cart-actions" id="cartActions" style="display:none;">
+        <button class="btn-back" onclick="location.href='/html/cliente.html'">
+            Seguir comprando
+        </button>
+        <button class="btn-checkout" onclick="checkout()">
+            Confirmar compra
+        </button>
+    </div>
+</div>
+
+<script>
+async function cargarCarrito() {
+    const res = await fetch('/cart');
+    const cart = await res.json();
+
+    const contenedor = document.getElementById('cartItems');
+    const totalDiv = document.getElementById('cartTotal');
+    const actions = document.getElementById('cartActions');
+
+    contenedor.innerHTML = '';
+    totalDiv.innerHTML = '';
+    actions.style.display = 'none';
+
+    if (!cart || cart.length === 0) {
+        contenedor.innerHTML = `
+            <div class="empty-cart">
+                <h3>🛍️ Tu carrito está vacío</h3>
+                <p>Agrega productos desde el catálogo</p>
+            </div>
+        `;
+        return;
+    }
+
+    let total = 0;
+
+    cart.forEach(p => {
+        const subtotal = p.precio * p.cantidad;
+        total += subtotal;
+
+        contenedor.innerHTML += `
+            <div class="cart-item">
+                <h4>${p.nombre}</h4>
+                <span>${p.cantidad} x $${p.precio}</span>
+                <span class="price">$${subtotal.toLocaleString('es-MX')}</span>
+            </div>
+        `;
+    });
+
+    totalDiv.textContent = `Total: $${total.toLocaleString('es-MX')}`;
+    actions.style.display = 'flex';
+}
+
+async function checkout() {
+    const res = await fetch('/orders/checkout', {
+        method: 'POST'
+    });
+
+    if (res.ok) {
+        alert('✅ Compra realizada con éxito');
+        location.href = '/html/cliente.html';
+    } else {
+        alert('❌ Error al procesar la compra');
+    }
+}
+
+cargarCarrito();
+</script>
+
+</body>
+</html>

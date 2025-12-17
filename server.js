@@ -23,6 +23,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use('/auth', require('./routes/auth.routes'));
 app.use('/admin', require('./routes/admin.routes'));
 app.use('/products', require('./routes/products.routes'));
+app.use('/categories', require('./routes/categories.routes'));
+app.use('/cart', require('./routes/cart.routes'));
+app.use('/orders', require('./routes/orders.routes'));
+
+
 
 // Landing
 app.get('/', (req, res) => {

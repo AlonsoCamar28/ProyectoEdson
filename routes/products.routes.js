@@ -8,5 +8,8 @@ router.get('/', productController.getProducts);         // LEER
 router.post('/', productController.createProduct);      // CREAR
 router.put('/:id', productController.updateProduct);    // ACTUALIZAR (¡Nuevo!)
 router.delete('/:id', productController.deleteProduct); // BORRAR (¡Nuevo!)
+router.get('/category/:id', productController.getProductsByCategory);
+router.get('/featured', productController.getFeaturedProducts);
+
 
 module.exports = router;

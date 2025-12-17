@@ -5,6 +5,56 @@
     <title>Catálogo | Nova Store</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="../css/styles.css">
+    <style>
+        /* Estilos adicionales para mejorar el catálogo */
+        .category-header {
+            background: linear-gradient(135deg, var(--card-bg), #1e1b4b);
+            padding: 2rem;
+            border-radius: 12px;
+            margin-bottom: 2rem;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .category-header h3 {
+            margin: 0;
+            color: var(--secondary);
+            font-size: 1.5rem;
+        }
+
+        .sidebar li {
+            margin-bottom: 0.5rem;
+            font-weight: 500;
+        }
+
+        .sidebar li.active {
+            background: var(--primary);
+            color: white;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 4rem 2rem;
+            color: var(--gray-text);
+        }
+
+        .empty-state h3 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 3rem;
+            color: var(--gray-text);
+            font-size: 1.2rem;
+        }
+
+        .card .btn-primary {
+            width: 100%;
+            padding: 12px;
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
 
@@ -12,6 +62,9 @@
     <div class="nav-content">
         <div class="logo">NOVA STORE</div>
         <ul class="nav-links">
+            <li>
+             <a href="/html/cart.html">🛒 Carrito (<span id="cartCount">0</span>)</a>
+            </li>
             <li><a href="/">Inicio</a></li>
             <li><a href="/auth/logout">Salir</a></li>
         </ul>
@@ -24,46 +77,195 @@
         <p>Explora nuestros productos disponibles</p>
     </div>
 
-    <div id="products" class="cards-grid"></div>
+    <div class="catalog-layout">
+        <!-- Sidebar de Categorías -->
+        <aside class="sidebar">
+            <h3>Categorías</h3>
+            <ul id="categoryList">
+                <li class="active" onclick="cargarDestacados()">
+                    🏠 Destacados
+                </li>
+            </ul>
+        </aside>
+
+        <!-- Contenido Principal -->
+        <div class="catalog-content">
+            <div id="categoryHeader" class="category-header" style="display:none;">
+                <h3 id="categoryTitle">Todos los productos</h3>
+            </div>
+            <div id="loadingIndicator" class="loading">
+                Cargando productos...
+            </div>
+            <div id="products" class="cards-grid"></div>
+        </div>
+    </div>
 </section>
 
 <script>
-async function cargarProductos() {
-    const res = await fetch('/products');
-    const products = await res.json();
+// Variables globales
+let categoriaActual = null;
 
-    const contenedor = document.getElementById('products');
-    contenedor.innerHTML = '';
+// Inicialización
+document.addEventListener('DOMContentLoaded', () => {
+    cargarCategorias();
+    cargarDestacados();
+});
 
-    products.forEach(p => {
-        contenedor.innerHTML += `
-            <div class="card">
-                <h3>${p.nombre}</h3>
-                <p>${p.descripcion}</p>
-                <p><strong>$${p.precio}</strong></p>
-                <button class="btn-primary" onclick="comprar(${p.id})">
-                    Comprar
-                </button>
-            </div>
-        `;
-    });
+async function actualizarContador() {
+  const res = await fetch('/cart');
+  if (!res.ok) return;
+  const cart = await res.json();
+  document.getElementById('cartCount').textContent =
+    cart.reduce((s,p)=>s+p.cantidad,0);
 }
 
-async function comprar(productId) {
-    const res = await fetch('/orders', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        body: JSON.stringify({ productId, cantidad: 1 })
-    });
+actualizarContador();
 
-    if (res.ok) {
-        alert('Producto agregado a tus compras');
-    } else {
-        alert('Error al comprar');
+
+
+// Cargar categorías desde la BD
+async function cargarCategorias() {
+    try {
+        const res = await fetch('/categories');
+        const categorias = await res.json();
+        const list = document.getElementById('categoryList');
+
+        categorias.forEach(c => {
+            const li = document.createElement('li');
+            li.textContent = c.nombre;
+            li.setAttribute('data-id', c.id);
+            li.onclick = () => cargarPorCategoria(c.id, c.nombre);
+            list.appendChild(li);
+        });
+    } catch (error) {
+        console.error('Error cargando categorías:', error);
     }
 }
 
-cargarProductos();
+// Cargar productos destacados (por defecto)
+async function cargarDestacados() {
+    categoriaActual = null;
+    activarCategoria(null);
+    document.getElementById('categoryHeader').style.display = 'none';
+    
+    try {
+        mostrarCargando(true);
+        const res = await fetch('/products/featured');
+        const products = await res.json();
+        renderProductos(products);
+    } catch (error) {
+        console.error('Error cargando destacados:', error);
+        mostrarError();
+    } finally {
+        mostrarCargando(false);
+    }
+}
+
+// Cargar productos por categoría
+async function cargarPorCategoria(id, nombre) {
+    categoriaActual = id;
+    activarCategoria(id);
+    
+    // Mostrar header de categoría
+    const header = document.getElementById('categoryHeader');
+    const title = document.getElementById('categoryTitle');
+    title.textContent = nombre;
+    header.style.display = 'block';
+
+    try {
+        mostrarCargando(true);
+        const res = await fetch(`/products/category/${id}`);
+        const products = await res.json();
+        renderProductos(products);
+    } catch (error) {
+        console.error('Error cargando productos:', error);
+        mostrarError();
+    } finally {
+        mostrarCargando(false);
+    }
+}
+
+// Renderizar productos en el grid
+function renderProductos(products) {
+    const contenedor = document.getElementById('products');
+    contenedor.innerHTML = '';
+
+    if (products.length === 0) {
+        contenedor.innerHTML = `
+            <div class="empty-state">
+                <h3>😔 No hay productos</h3>
+                <p>No se encontraron productos en esta categoría</p>
+            </div>
+        `;
+        return;
+    }
+
+    products.forEach(p => {
+        const card = document.createElement('div');
+        card.className = 'card';
+        card.innerHTML = `
+            <img src="${p.imagen}" alt="${p.nombre}" class="product-img">
+            <div class="card-body">
+                <h3 class="card-title">${p.nombre}</h3>
+                <p class="card-text">${p.descripcion || 'Sin descripción'}</p>
+                <div class="card-footer">
+                    <span class="price-tag">$${parseFloat(p.precio).toLocaleString('es-MX', {minimumFractionDigits: 2})}</span>
+                </div>
+                <button class="btn-primary" onclick="comprar(${p.id})">
+                    🛒 Comprar
+                </button>
+            </div>
+        `;
+        contenedor.appendChild(card);
+    });
+}
+
+
+
+// Activar categoría seleccionada visualmente
+function activarCategoria(id) {
+    const items = document.querySelectorAll('#categoryList li');
+    items.forEach(item => {
+        item.classList.remove('active');
+        if (!id && item.textContent.includes('Destacados')) {
+            item.classList.add('active');
+        } else if (item.getAttribute('data-id') == id) {
+            item.classList.add('active');
+        }
+    });
+}
+
+// Mostrar/ocultar indicador de carga
+function mostrarCargando(mostrar) {
+    const loading = document.getElementById('loadingIndicator');
+    loading.style.display = mostrar ? 'block' : 'none';
+}
+
+// Mostrar error
+function mostrarError() {
+    const contenedor = document.getElementById('products');
+    contenedor.innerHTML = `
+        <div class="empty-state">
+            <h3>⚠️ Error</h3>
+            <p>No se pudieron cargar los productos. Intenta de nuevo.</p>
+        </div>
+    `;
+}
+
+async function comprar(productId) {
+  const res = await fetch('/cart/add', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({ productId, cantidad: 1 })
+  });
+
+  if (res.ok) {
+    alert('🛒 Producto agregado al carrito');
+    actualizarContador();
+  }
+}
+
+
 </script>
 
 </body>

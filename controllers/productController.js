@@ -64,3 +64,29 @@ exports.deleteProduct = (req, res) => {
         res.send('Producto eliminado');
     });
 };
+
+exports.getProductsByCategory = (req, res) => {
+  const { id } = req.params;
+
+  const sql = `
+    SELECT p.*, c.nombre AS categoria
+    FROM products p
+    JOIN categories c ON p.category_id = c.id
+    WHERE c.id = ?
+  `;
+
+  db.query(sql, [id], (err, results) => {
+    if (err) return res.status(500).send('Error filtro');
+    res.json(results);
+  });
+};
+
+exports.getFeaturedProducts = (req, res) => {
+  db.query(
+    'SELECT * FROM products ORDER BY RAND() LIMIT 8',
+    (err, results) => {
+      if (err) return res.status(500).send('Error destacados');
+      res.json(results);
+    }
+  );
+};

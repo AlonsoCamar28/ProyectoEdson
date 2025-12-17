@@ -54,9 +54,12 @@ exports.login = (req, res) => {
 
       if (user.rol === 'admin') {
         res.redirect('/html/admin.html');
-      } else {
-        res.redirect('/html/cliente.html');
-      }
+      } else if(user.rol === 'vendedor'){
+        res.redirect('/html/vendedor.html');
+      } else
+        {
+          res.redirect('/html/cliente.html');
+        }
     }
   );
 };

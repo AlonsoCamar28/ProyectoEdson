@@ -1,8 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const productController = require('../controllers/productController');
+// Ajusta la ruta ../controllers/productController según tus carpetas
+const productController = require('../controllers/productController'); 
 
-router.get('/', productController.getProducts); // ✅ SIN paréntesis
-
+// Definición de Rutas
+router.get('/', productController.getProducts);         // LEER
+router.post('/', productController.createProduct);      // CREAR
+router.put('/:id', productController.updateProduct);    // ACTUALIZAR (¡Nuevo!)
+router.delete('/:id', productController.deleteProduct); // BORRAR (¡Nuevo!)
 
 module.exports = router;

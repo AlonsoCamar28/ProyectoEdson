@@ -1,16 +1,12 @@
 const express = require('express');
 const router = express.Router();
 
+// Importamos el controlador
 const adminController = require('../controllers/adminController');
-const productController = require('../controllers/productController');
-const { isAdmin } = require('../middleware/authMiddleware');
 
-// Usuarios
-router.get('/users', isAdmin, adminController.getUsers);
-router.delete('/users/:id', isAdmin, adminController.deleteUser);
-
-// Productos
-router.post('/products', isAdmin, productController.create);
+// DEFINICIÓN DE RUTAS PARA USUARIOS
+router.get('/users', adminController.getUsers);
+router.delete('/users/:id', adminController.deleteUser);
 router.post('/users', adminController.createUser);
 router.put('/users/:id', adminController.updateUser);
 

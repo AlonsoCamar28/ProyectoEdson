@@ -38,7 +38,6 @@
     </div>
 
     <div class="table-container">
-        
         <div id="action-bar" class="action-bar"></div>
 
         <table class="data-table">
@@ -51,16 +50,16 @@
 </section>
 
 <script>
-    // Variables globales
+    // --- VARIABLES GLOBALES ---
     let vistaActual = 'clientes';
-    let usuarioSeleccionadoId = null; // Para saber a quién estamos editando
+    let idSeleccionado = null; // Sirve para guardar el ID del Usuario o Producto que estamos editando
 
-    // Función principal que controla qué ver
+    // --- FUNCIÓN PRINCIPAL (ROUTER DEL FRONTEND) ---
     async function cargarVista(vista) {
         vistaActual = vista;
-        limpiarFormulario(); // Limpiamos selección al cambiar de pestaña
+        limpiarFormulario(); // Reseteamos formularios y variables al cambiar de pestaña
         
-        // 1. Actualizar estilo de botones (Tabs)
+        // 1. Actualizar estilos de las pestañas (Tabs)
         document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
         if(event && event.target) {
             const btn = event.target.closest('button');
@@ -71,16 +70,18 @@
         const tableBody = document.getElementById('table-body');
         const actionBar = document.getElementById('action-bar');
         
-        // Limpiar tabla y mostrar carga
-        tableBody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Cargando datos...</td></tr>';
+        // Mostrar estado de carga
+        tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem;">Cargando datos...</td></tr>';
         actionBar.innerHTML = ''; 
 
         try {
+            // ==========================================
+            // CASO 1: CLIENTES O VENDEDORES
+            // ==========================================
             if (vista === 'clientes' || vista === 'vendedores') {
-                // Definir el rol actual
                 const rol = vista === 'clientes' ? 'cliente' : 'vendedor';
 
-                // --- NUEVO: Formulario con BOTONES DE ACTUALIZAR ---
+                // Inyectar Formulario de Usuarios
                 actionBar.innerHTML = `
                     <div class="inline-form">
                         <input id="uNombre" placeholder="Nombre completo" />
@@ -94,7 +95,7 @@
                     </div>
                 `;
 
-                // Configurar Encabezados
+                // Inyectar Encabezados
                 const extraHeader = vista === 'vendedores' ? 'Ventas' : 'Rol';
                 tableHead.innerHTML = `
                     <tr>
@@ -102,34 +103,50 @@
                     </tr>
                 `;
 
-                // Obtener datos
+                // Fetch y Renderizado
                 const res = await fetch(`/admin/users?rol=${rol}`);
                 const data = await res.json();
                 renderUsers(data);
 
+            // ==========================================
+            // CASO 2: PRODUCTOS
+            // ==========================================
             } else if (vista === 'productos') {
-                // --- Formulario Productos ---
+                
+                // Inyectar Formulario de Productos
                 actionBar.innerHTML = `
                     <div class="inline-form">
-                        <input id="pNombre" placeholder="Nombre" />
-                        <input id="pDesc" placeholder="Descripción" />
-                        <input id="pPrecio" type="number" placeholder="$" style="width:80px;" />
+                        <input id="pNombre" placeholder="Nombre Producto" />
+                        <input id="pDesc" placeholder="Descripción breve" />
+                        <input id="pPrecio" type="number" placeholder="$ Precio" style="width:100px;" />
+                        
                         <button class="btn-primary" onclick="crearProducto()">+ Agregar</button>
+
+                        <button id="btnUpdateP" class="btn-primary" onclick="actualizarProducto()" style="display:none; background-color: #f59e0b; margin-left:5px;">Actualizar</button>
+                        <button id="btnCancelP" class="btn-delete" onclick="limpiarFormulario()" style="display:none; margin-left:5px;">Cancelar</button>
                     </div>
                 `;
 
-                tableHead.innerHTML = `<tr><th>ID</th><th>Imagen</th><th>Producto</th><th>Descripción</th><th>Precio</th><th>Acciones</th></tr>`;
+                // Inyectar Encabezados
+                tableHead.innerHTML = `
+                    <tr>
+                        <th>ID</th><th>Img</th><th>Producto</th><th>Descripción</th><th>Precio</th><th>Acciones</th>
+                    </tr>
+                `;
+                
+                // Fetch y Renderizado
                 const res = await fetch('/products');
                 const data = await res.json();
                 renderProducts(data);
             }
         } catch (error) {
             console.error(error);
-            tableBody.innerHTML = '<tr><td colspan="5">Error al cargar datos</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">Error de conexión con el servidor</td></tr>';
         }
     }
 
-    // Renderizar Usuarios (Con evento CLICK para editar)
+    // --- FUNCIONES DE RENDERIZADO (DIBUJAR TABLAS) ---
+
     function renderUsers(users) {
         const tbody = document.getElementById('table-body');
         tbody.innerHTML = '';
@@ -140,7 +157,7 @@
         }
 
         users.forEach(u => {
-            // Convertimos el usuario a texto para pasarlo a la función, evitando error con comillas simples
+            // Convertimos objeto a string seguro para el HTML
             const userStr = JSON.stringify(u).replace(/'/g, "&#39;");
 
             tbody.innerHTML += `
@@ -150,108 +167,150 @@
                     <td>${u.email}</td>
                     <td><span class="badge ${u.rol}">${u.rol}</span></td>
                     <td>
-                        <button class="btn-delete" onclick="event.stopPropagation(); eliminarUsuario(${u.id})">Eliminar</button>
+                        <button class="btn-delete" onclick="event.stopPropagation(); eliminarUsuario(${u.id})">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
                     </td>
                 </tr>
             `;
         });
     }
 
-    // --- NUEVAS FUNCIONES PARA EDICIÓN ---
+    function renderProducts(products) {
+        const tbody = document.getElementById('table-body');
+        tbody.innerHTML = '';
 
-    // 1. Rellenar inputs al hacer clic
+        if(products.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No hay productos</td></tr>';
+            return;
+        }
+
+        products.forEach(p => {
+            const prodStr = JSON.stringify(p).replace(/'/g, "&#39;");
+
+            tbody.innerHTML += `
+                <tr onclick='seleccionarProducto(${prodStr})' style="cursor: pointer; transition: 0.2s;" title="Clic para editar">
+                    <td>#${p.id}</td>
+                    <td><div style="background:#334155; color:#94a3b8; width:40px; height:40px; display:flex; align-items:center; justify-content:center; border-radius:4px; font-size:0.7em;">IMG</div></td>
+                    <td><strong>${p.nombre}</strong></td>
+                    <td>${p.descripcion || '-'}</td>
+                    <td class="price">$${p.precio}</td>
+                    <td>
+                        <button class="btn-delete" onclick="event.stopPropagation(); eliminarProducto(${p.id})">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    // --- LÓGICA DE SELECCIÓN Y LIMPIEZA (PARA UPDATE) ---
+
+    // 1. Rellenar inputs de USUARIO
     function seleccionarUsuario(user) {
-        usuarioSeleccionadoId = user.id; // Guardamos el ID
-
-        // Llenamos los campos
+        idSeleccionado = user.id;
         document.getElementById('uNombre').value = user.nombre;
         document.getElementById('uEmail').value = user.email;
         
-        // La contraseña la limpiamos (no la mostramos por seguridad)
         const passField = document.getElementById('uPass');
         passField.value = '';
         passField.placeholder = "Nueva contraseña (o dejar vacío)";
 
-        // Mostramos botones de edición
+        // Mostrar botones de edición
         document.getElementById('btnUpdate').style.display = 'inline-block';
         document.getElementById('btnCancel').style.display = 'inline-block';
     }
 
-    // 2. Limpiar formulario y ocultar botones de edición
+    // 2. Rellenar inputs de PRODUCTO
+    function seleccionarProducto(prod) {
+        idSeleccionado = prod.id;
+        document.getElementById('pNombre').value = prod.nombre;
+        document.getElementById('pDesc').value = prod.descripcion;
+        document.getElementById('pPrecio').value = prod.precio;
+
+        // Mostrar botones de edición
+        document.getElementById('btnUpdateP').style.display = 'inline-block';
+        document.getElementById('btnCancelP').style.display = 'inline-block';
+    }
+
+    // 3. Limpiar Todo
     function limpiarFormulario() {
-        usuarioSeleccionadoId = null;
+        idSeleccionado = null;
+
+        // Limpiar campos Usuario (si existen)
         if(document.getElementById('uNombre')) {
             document.getElementById('uNombre').value = '';
             document.getElementById('uEmail').value = '';
             document.getElementById('uPass').value = '';
             document.getElementById('uPass').placeholder = "Contraseña";
-            
-            // Ocultar botones extra
             document.getElementById('btnUpdate').style.display = 'none';
             document.getElementById('btnCancel').style.display = 'none';
         }
-    }
 
-    // 3. Enviar actualización al servidor
-    async function actualizarUsuario() {
-        if(!usuarioSeleccionadoId) return alert("Selecciona un usuario primero");
-
-        const nombre = document.getElementById('uNombre').value;
-        const email = document.getElementById('uEmail').value;
-        const password = document.getElementById('uPass').value;
-        // Mantenemos el rol de la vista actual
-        const rol = vistaActual === 'clientes' ? 'cliente' : 'vendedor';
-
-        try {
-            const res = await fetch('/admin/users/' + usuarioSeleccionadoId, {
-                method: 'PUT',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ nombre, email, password, rol })
-            });
-
-            if(res.ok) {
-                alert("Usuario actualizado correctamente");
-                limpiarFormulario(); // Reseteamos
-                cargarVista(vistaActual); // Recargamos tabla
-            } else {
-                alert("Error al actualizar");
-            }
-        } catch (e) {
-            console.error(e);
-            alert("Error de conexión");
+        // Limpiar campos Producto (si existen)
+        if(document.getElementById('pNombre')) {
+            document.getElementById('pNombre').value = '';
+            document.getElementById('pDesc').value = '';
+            document.getElementById('pPrecio').value = '';
+            document.getElementById('btnUpdateP').style.display = 'none';
+            document.getElementById('btnCancelP').style.display = 'none';
         }
     }
 
-    // --- FIN FUNCIONES DE EDICIÓN ---
+    // --- OPERACIONES CRUD: USUARIOS ---
 
-    // Renderizar Productos
-    function renderProducts(products) {
-        const tbody = document.getElementById('table-body');
-        tbody.innerHTML = '';
+    async function crearUsuario(rolAsignado) {
+        const nombre = document.getElementById('uNombre').value;
+        const email = document.getElementById('uEmail').value;
+        const password = document.getElementById('uPass').value;
 
-        products.forEach(p => {
-            tbody.innerHTML += `
-                <tr>
-                    <td>#${p.id}</td>
-                    <td><div class="img-placeholder">IMG</div></td>
-                    <td><strong>${p.nombre}</strong></td>
-                    <td>${p.descripcion || '-'}</td>
-                    <td class="price">$${p.precio}</td>
-                    <td>
-                        <button class="btn-delete" onclick="alert('Función pendiente')">Borrar</button>
-                    </td>
-                </tr>
-            `;
+        if(!nombre || !email || !password) return alert("Completa todos los campos");
+
+        await fetch('/admin/users', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ nombre, email, password, rol: rolAsignado })
         });
+        cargarVista(vistaActual);
     }
 
-    // Crear Producto
+    async function actualizarUsuario() {
+        if(!idSeleccionado) return alert("Selecciona un usuario");
+        
+        const nombre = document.getElementById('uNombre').value;
+        const email = document.getElementById('uEmail').value;
+        const password = document.getElementById('uPass').value;
+        const rol = vistaActual === 'clientes' ? 'cliente' : 'vendedor';
+
+        const res = await fetch('/admin/users/' + idSeleccionado, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ nombre, email, password, rol })
+        });
+
+        if(res.ok) {
+            limpiarFormulario();
+            cargarVista(vistaActual);
+        } else {
+            alert("Error al actualizar");
+        }
+    }
+
+    async function eliminarUsuario(id) {
+        if (!confirm('¿Seguro de eliminar este usuario?')) return;
+        await fetch('/admin/users/' + id, { method: 'DELETE' });
+        cargarVista(vistaActual);
+    }
+
+    // --- OPERACIONES CRUD: PRODUCTOS ---
+
     async function crearProducto() {
         const nombre = document.getElementById('pNombre').value;
         const descripcion = document.getElementById('pDesc').value;
         const precio = document.getElementById('pPrecio').value;
 
-        if(!nombre || !precio) return alert("Llena los datos");
+        if(!nombre || !precio) return alert("Nombre y Precio obligatorios");
 
         await fetch('/products', {
             method: 'POST',
@@ -261,53 +320,32 @@
         cargarVista('productos');
     }
 
-    // Eliminar Usuario
-    async function eliminarUsuario(id) {
-        if (!confirm('¿Seguro de eliminar este usuario?')) return;
-        await fetch('/admin/users/' + id, { method: 'DELETE' });
-        cargarVista(vistaActual);
+    async function actualizarProducto() {
+        if(!idSeleccionado) return alert("Selecciona un producto");
+
+        const nombre = document.getElementById('pNombre').value;
+        const descripcion = document.getElementById('pDesc').value;
+        const precio = document.getElementById('pPrecio').value;
+
+        await fetch('/products/' + idSeleccionado, {
+            method: 'PUT',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ nombre, descripcion, precio })
+        });
+
+        limpiarFormulario();
+        cargarVista('productos');
     }
 
-    // Crear Usuario (Cliente o Vendedor)
-    async function crearUsuario(rolAsignado) {
-        const nombre = document.getElementById('uNombre').value;
-        const email = document.getElementById('uEmail').value;
-        const password = document.getElementById('uPass').value;
-
-        if(!nombre || !email || !password) return alert("Por favor completa todos los campos para crear");
-
-        try {
-            const res = await fetch('/admin/users', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ 
-                    nombre: nombre, 
-                    email: email, 
-                    password: password, 
-                    rol: rolAsignado 
-                })
-            });
-
-            if(res.ok) {
-                cargarVista(vistaActual);
-            } else {
-                const msg = await res.text();
-                alert("Error: " + msg);
-            }
-        } catch (error) {
-            console.error(error);
-            alert("Error de conexión");
-        }
+    async function eliminarProducto(id) {
+        if (!confirm('¿Seguro de borrar este producto?')) return;
+        await fetch('/products/' + id, { method: 'DELETE' });
+        cargarVista('productos');
     }
 
-    // Inicializar
+    // Inicializar app en la primera pestaña
     document.querySelectorAll('.tab-btn')[0].click(); 
 </script>
-
-
-
-
-
 
 </body>
 </html>

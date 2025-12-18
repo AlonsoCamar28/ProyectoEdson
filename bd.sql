@@ -155,3 +155,113 @@ INSERT INTO products (nombre, descripcion, precio, imagen) VALUES
 
 
 select * from users;
+
+
+
+SELECT p.nombre, c.nombre AS categoria
+FROM products p
+JOIN categories c ON p.category_id = c.id;
+ALTER TABLE orders ADD total DECIMAL(10,2) DEFAULT 0;
+
+
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'iPhone 15 Pro' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/iPhone.png';
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'Samsung Galaxy S24 Ultra' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/samsung.jpg';
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'MacBook Air M3' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/macbook.jpg';
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'Sony WH-1000XM5' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/sony.jpg';
+
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'Google Pixel 8 Pro' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/pixel.jpg';
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'Xiaomi 13T Pro' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/xiaomi.jpg';
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'ASUS ROG Zephyrus G14' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/asus.jpg';
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'Dell XPS 13 Plus' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/dell.jpg';
+
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'AirPods Pro 2' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/airpods.jpg';
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'Bose SoundLink Flex' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/bose.jpg';
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'PlayStation 5 Slim' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/play.jpg';
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'Xbox Series X' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/xbox.jpg';
+
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'Nintendo Switch OLED' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/switch.jpg';
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'Mouse Logitech MX Master 3S' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/logitech.jpg';
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'Teclado Mecánico Keychron K2' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/keychron.jpg';
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'Hub USB-C 8 en 1' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/hub.jpg';
+
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'Echo Dot 5ta Gen' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/echo.jpg';
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'Google Nest Hub 2' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/nest.jpg';
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'Foco Inteligente Wiz' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/foco.jpg';
+
+SELECT nombre, imagen FROM products;

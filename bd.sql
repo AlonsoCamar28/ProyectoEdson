@@ -155,3 +155,161 @@ INSERT INTO products (nombre, descripcion, precio, imagen) VALUES
 
 
 select * from users;
+
+
+
+CREATE TABLE categories (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  nombre VARCHAR(50) UNIQUE
+);
+
+ALTER TABLE products 
+ADD category_id INT,
+ADD FOREIGN KEY (category_id) REFERENCES categories(id);
+
+INSERT INTO categories (nombre) VALUES
+('Celulares'),
+('Auriculares'),
+('Smartphones'),
+('Computadoras'),
+('Accesorios'),
+('Gaming'),
+('Smart Home');
+
+select * from products;
+
+select * from categories;
+
+
+select * from users;
+
+select * from orders;
+
+INSERT INTO products (nombre, descripcion, precio, imagen, category_id) VALUES
+('iPhone 15 Pro', 'Titanio, Chip A17 Pro.', 23999.00, '/img/default.png', 3),
+('Samsung Galaxy S24 Ultra', 'Cámara 200MP, IA.', 26500.00, '/img/default.png', 3),
+('Google Pixel 8 Pro', 'Cámara con IA.', 19500.00, '/img/default.png', 3),
+('Xiaomi 13T Pro', 'Cámaras Leica.', 12500.00, '/img/default.png', 3),
+('MacBook Air M3', 'Ultradelgada, chip M3.', 22499.00, '/img/default.png', 4),
+('ASUS ROG Zephyrus G14', 'Laptop gamer.', 32000.00, '/img/default.png', 4),
+('Dell XPS 13 Plus', 'Pantalla OLED.', 29000.00, '/img/default.png', 4),
+('Sony WH-1000XM5', 'Cancelación de ruido.', 6500.00, '/img/default.png', 2),
+('AirPods Pro 2', 'Audio espacial.', 4999.00, '/img/default.png', 2),
+('Bose SoundLink Flex', 'Bluetooth resistente.', 3200.00, '/img/default.png', 2),
+('PlayStation 5 Slim', 'Gráficos 4K.', 10999.00, '/img/default.png', 6),
+('Xbox Series X', 'Consola potente.', 11500.00, '/img/default.png', 6),
+('Nintendo Switch OLED', 'Modo portátil.', 6999.00, '/img/default.png', 6),
+('Mouse Logitech MX Master 3S', 'Ergonómico.', 1800.00, '/img/default.png', 5),
+('Teclado Mecánico Keychron K2', 'RGB mecánico.', 2100.00, '/img/default.png', 5),
+('Hub USB-C 8 en 1', 'HDMI, USB, SD.', 800.00, '/img/default.png', 5),
+('Echo Dot 5ta Gen', 'Alexa integrada.', 1200.00, '/img/default.png', 7),
+('Google Nest Hub 2', 'Pantalla inteligente.', 1900.00, '/img/default.png', 7),
+('Foco Inteligente Wiz', 'Colores WiFi.', 250.00, '/img/default.png', 7);
+
+SELECT p.nombre, c.nombre AS categoria
+FROM products p
+JOIN categories c ON p.category_id = c.id;
+ALTER TABLE orders ADD total DECIMAL(10,2) DEFAULT 0;
+
+
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'iPhone 15 Pro' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/iPhone.png';
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'Samsung Galaxy S24 Ultra' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/samsung.jpg';
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'MacBook Air M3' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/macbook.jpg';
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'Sony WH-1000XM5' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/sony.jpg';
+
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'Google Pixel 8 Pro' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/pixel.jpg';
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'Xiaomi 13T Pro' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/xiaomi.jpg';
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'ASUS ROG Zephyrus G14' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/asus.jpg';
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'Dell XPS 13 Plus' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/dell.jpg';
+
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'AirPods Pro 2' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/airpods.jpg';
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'Bose SoundLink Flex' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/bose.jpg';
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'PlayStation 5 Slim' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/play.jpg';
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'Xbox Series X' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/xbox.jpg';
+
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'Nintendo Switch OLED' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/switch.jpg';
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'Mouse Logitech MX Master 3S' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/logitech.jpg';
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'Teclado Mecánico Keychron K2' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/keychron.jpg';
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'Hub USB-C 8 en 1' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/hub.jpg';
+
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'Echo Dot 5ta Gen' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/echo.jpg';
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'Google Nest Hub 2' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/nest.jpg';
+
+UPDATE products p
+JOIN (SELECT id FROM products WHERE nombre = 'Foco Inteligente Wiz' LIMIT 1) x
+ON p.id = x.id
+SET p.imagen = '/img/foco.jpg';
+
+SELECT nombre, imagen FROM products;

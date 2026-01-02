@@ -108,17 +108,20 @@
                 const data = await res.json();
                 renderUsers(data);
 
+
             // ==========================================
-            // CASO 2: PRODUCTOS
+            // CASO 2: PRODUCTOS (ACTUALIZADO CON STOCK)
             // ==========================================
             } else if (vista === 'productos') {
                 
-                // Inyectar Formulario de Productos
+                // Inyectar Formulario de Productos (AHORA CON INPUT DE STOCK)
                 actionBar.innerHTML = `
                     <div class="inline-form">
                         <input id="pNombre" placeholder="Nombre Producto" />
                         <input id="pDesc" placeholder="Descripción breve" />
+                        
                         <input id="pPrecio" type="number" placeholder="$ Precio" style="width:100px;" />
+                        <input id="pStock" type="number" placeholder="# Stock" style="width:80px;" /> 
                         
                         <button class="btn-primary" onclick="crearProducto()">+ Agregar</button>
 
@@ -127,10 +130,15 @@
                     </div>
                 `;
 
-                // Inyectar Encabezados
+                // Inyectar Encabezados (AHORA CON COLUMNA STOCK)
                 tableHead.innerHTML = `
                     <tr>
-                        <th>ID</th><th>Img</th><th>Producto</th><th>Descripción</th><th>Precio</th><th>Acciones</th>
+                        <th>ID</th>
+                        <th>Img</th>
+                        <th>Producto</th>
+                        <th>Descripción</th>
+                        <th>Precio</th>
+                        <th>Stock</th> <th>Acciones</th>
                     </tr>
                 `;
                 
@@ -176,51 +184,58 @@
         });
     }
 
-    function renderProducts(products) {
-        const tbody = document.getElementById('table-body');
-        tbody.innerHTML = '';
+   function renderProducts(products) {
+    const tbody = document.getElementById('table-body');
+    tbody.innerHTML = '';
 
-        if(products.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="6" style="text-align:center;">No hay productos</td></tr>';
-            return;
-        }
-
-        products.forEach(p => {
-            const prodStr = JSON.stringify(p).replace(/'/g, "&#39;");
-
-            tbody.innerHTML += `
-                <tr onclick='seleccionarProducto(${prodStr})' style="cursor: pointer; transition: 0.2s;" title="Clic para editar">
-                    <td>#${p.id}</td>
-                    <td><div style="background:#334155; color:#94a3b8; width:40px; height:40px; display:flex; align-items:center; justify-content:center; border-radius:4px; font-size:0.7em;">IMG</div></td>
-                    <td><strong>${p.nombre}</strong></td>
-                    <td>${p.descripcion || '-'}</td>
-                    <td class="price">$${p.precio}</td>
-                    <td>
-                        <button class="btn-delete" onclick="event.stopPropagation(); eliminarProducto(${p.id})">
-                            <i class="fa-solid fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-            `;
-        });
+    if(products.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No hay productos</td></tr>'; // Aumentamos colspan a 7
+        return;
     }
+
+    products.forEach(p => {
+        const prodStr = JSON.stringify(p).replace(/'/g, "&#39;");
+
+        // Lógica para resaltar stock bajo
+        const stockStyle = p.stock < 5 ? 'color: red; font-weight: bold;' : 'color: #10b981;';
+        const stockText = p.stock < 5 ? `${p.stock} (Bajo)` : p.stock;
+
+        tbody.innerHTML += `
+            <tr onclick='seleccionarProducto(${prodStr})' style="cursor: pointer; transition: 0.2s;" title="Clic para editar">
+                <td>#${p.id}</td>
+                <td><div style="background:#334155; color:#94a3b8; width:40px; height:40px; display:flex; align-items:center; justify-content:center; border-radius:4px; font-size:0.7em;">IMG</div></td>
+                <td><strong>${p.nombre}</strong></td>
+                <td>${p.descripcion || '-'}</td>
+                <td class="price">$${p.precio}</td>
+                <td style="${stockStyle}">${stockText}</td> <td>
+                    <button class="btn-delete" onclick="event.stopPropagation(); eliminarProducto(${p.id})">
+                        <i class="fa-solid fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+        `;
+    });
+}
+
 
     // --- LÓGICA DE SELECCIÓN Y LIMPIEZA (PARA UPDATE) ---
 
     // 1. Rellenar inputs de USUARIO
-    function seleccionarUsuario(user) {
-        idSeleccionado = user.id;
-        document.getElementById('uNombre').value = user.nombre;
-        document.getElementById('uEmail').value = user.email;
-        
-        const passField = document.getElementById('uPass');
-        passField.value = '';
-        passField.placeholder = "Nueva contraseña (o dejar vacío)";
+    function seleccionarProducto(prod) {
+    idSeleccionado = prod.id;
+    document.getElementById('pNombre').value = prod.nombre;
+    document.getElementById('pDesc').value = prod.descripcion;
+    document.getElementById('pPrecio').value = prod.precio;
+    document.getElementById('pStock').value = prod.stock; // <--- Nuevo
 
-        // Mostrar botones de edición
-        document.getElementById('btnUpdate').style.display = 'inline-block';
-        document.getElementById('btnCancel').style.display = 'inline-block';
-    }
+    document.getElementById('btnUpdateP').style.display = 'inline-block';
+    document.getElementById('btnCancelP').style.display = 'inline-block';
+}
+
+if(document.getElementById('pNombre')) {
+    // ... (lo que ya tenías) ...
+    document.getElementById('pStock').value = ''; // <--- Nuevo
+}
 
     // 2. Rellenar inputs de PRODUCTO
     function seleccionarProducto(prod) {
@@ -305,37 +320,45 @@
 
     // --- OPERACIONES CRUD: PRODUCTOS ---
 
-    async function crearProducto() {
-        const nombre = document.getElementById('pNombre').value;
-        const descripcion = document.getElementById('pDesc').value;
-        const precio = document.getElementById('pPrecio').value;
+   // Crear Producto
+async function crearProducto() {
+    const nombre = document.getElementById('pNombre').value;
+    const descripcion = document.getElementById('pDesc').value;
+    const precio = document.getElementById('pPrecio').value;
+    const stock = document.getElementById('pStock').value; // <--- Nuevo
 
-        if(!nombre || !precio) return alert("Nombre y Precio obligatorios");
+    if(!nombre || !precio) return alert("Nombre y Precio obligatorios");
 
-        await fetch('/products', {
-            method: 'POST',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ nombre, descripcion, precio })
-        });
-        cargarVista('productos');
-    }
+    await fetch('/products', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        // Enviamos stock
+        body: JSON.stringify({ nombre, descripcion, precio, stock }) 
+    });
+    cargarVista('productos');
+}
 
-    async function actualizarProducto() {
-        if(!idSeleccionado) return alert("Selecciona un producto");
 
-        const nombre = document.getElementById('pNombre').value;
-        const descripcion = document.getElementById('pDesc').value;
-        const precio = document.getElementById('pPrecio').value;
 
-        await fetch('/products/' + idSeleccionado, {
-            method: 'PUT',
-            headers: {'Content-Type':'application/json'},
-            body: JSON.stringify({ nombre, descripcion, precio })
-        });
+  // Actualizar Producto
+async function actualizarProducto() {
+    if(!idSeleccionado) return alert("Selecciona un producto");
 
-        limpiarFormulario();
-        cargarVista('productos');
-    }
+    const nombre = document.getElementById('pNombre').value;
+    const descripcion = document.getElementById('pDesc').value;
+    const precio = document.getElementById('pPrecio').value;
+    const stock = document.getElementById('pStock').value; // <--- Nuevo
+
+    await fetch('/products/' + idSeleccionado, {
+        method: 'PUT',
+        headers: {'Content-Type':'application/json'},
+        // Enviamos stock
+        body: JSON.stringify({ nombre, descripcion, precio, stock })
+    });
+
+    limpiarFormulario();
+    cargarVista('productos');
+}
 
     async function eliminarProducto(id) {
         if (!confirm('¿Seguro de borrar este producto?')) return;

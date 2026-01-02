@@ -1,8 +1,7 @@
 const db = require('../config/db');
 
-// 1. OBTENER TODOS (READ)
+// 1. OBTENER TODOS
 exports.getProducts = (req, res) => {
-    // CORRECCIÓN: Cambiamos 'productos' por 'products'
     db.query('SELECT * FROM products', (err, results) => {
         if (err) {
             console.error(err);
@@ -12,21 +11,22 @@ exports.getProducts = (req, res) => {
     });
 };
 
-// 2. CREAR PRODUCTO (CREATE)
+// 2. CREAR PRODUCTO (AHORA CON STOCK)
 exports.createProduct = (req, res) => {
-    const { nombre, descripcion, precio } = req.body;
-    
-    // CORRECCIÓN: La columna en tu BD se llama 'imagen', no 'imagen_url'
+    // Recibimos 'stock' del cuerpo de la petición
+    const { nombre, descripcion, precio, stock } = req.body;
     const imagen = '/img/default.png'; 
 
     if (!nombre || !precio) {
         return res.status(400).send('Nombre y Precio son obligatorios');
     }
 
-    // CORRECCIÓN: Tabla 'products' y columna 'imagen'
-    const sql = 'INSERT INTO products (nombre, descripcion, precio, imagen) VALUES (?, ?, ?, ?)';
+    // Validar que el stock sea un número válido (si no viene, ponemos 0)
+    const stockValido = stock ? parseInt(stock) : 0;
+
+    const sql = 'INSERT INTO products (nombre, descripcion, precio, stock, imagen) VALUES (?, ?, ?, ?, ?)';
     
-    db.query(sql, [nombre, descripcion, precio, imagen], (err, result) => {
+    db.query(sql, [nombre, descripcion, precio, stockValido, imagen], (err, result) => {
         if (err) {
             console.error(err);
             return res.status(500).send('Error al crear producto');
@@ -35,15 +35,16 @@ exports.createProduct = (req, res) => {
     });
 };
 
-// 3. ACTUALIZAR PRODUCTO (UPDATE)
+// 3. ACTUALIZAR PRODUCTO (AHORA CON STOCK)
 exports.updateProduct = (req, res) => {
     const { id } = req.params;
-    const { nombre, descripcion, precio } = req.body;
+    const { nombre, descripcion, precio, stock } = req.body;
 
-    // CORRECCIÓN: Tabla 'products'
-    const sql = 'UPDATE products SET nombre = ?, descripcion = ?, precio = ? WHERE id = ?';
+    const stockValido = stock ? parseInt(stock) : 0;
+
+    const sql = 'UPDATE products SET nombre = ?, descripcion = ?, precio = ?, stock = ? WHERE id = ?';
     
-    db.query(sql, [nombre, descripcion, precio, id], (err, result) => {
+    db.query(sql, [nombre, descripcion, precio, stockValido, id], (err, result) => {
         if (err) {
             console.error(err);
             return res.status(500).send('Error al actualizar');
@@ -52,10 +53,9 @@ exports.updateProduct = (req, res) => {
     });
 };
 
-// 4. BORRAR PRODUCTO (DELETE)
+// 4. BORRAR PRODUCTO
 exports.deleteProduct = (req, res) => {
     const { id } = req.params;
-    // CORRECCIÓN: Tabla 'products'
     db.query('DELETE FROM products WHERE id = ?', [id], (err, result) => {
         if (err) {
             console.error(err);
@@ -90,3 +90,4 @@ exports.getFeaturedProducts = (req, res) => {
     }
   );
 };
+

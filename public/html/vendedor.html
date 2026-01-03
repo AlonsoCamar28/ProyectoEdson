@@ -42,17 +42,37 @@
 
             <div id="vista-tabla" style="display: none; background: #1e293b; padding: 1.5rem; border-radius: 12px;">
                 
-                <div id="action-bar" class="action-bar" style="margin-bottom: 2rem;">
-                    <div class="inline-form">
-                        <input id="pNombre" placeholder="Nombre Producto" />
-                        <input id="pDesc" placeholder="Descripción breve" />
-                        <input id="pPrecio" type="number" placeholder="$ Precio" style="width:100px;" />
-                        
-                        <button class="btn-primary" onclick="crearProducto()">+ Agregar</button>
-                        <button id="btnUpdate" class="btn-primary" onclick="actualizarProducto()" style="display:none; background-color: #f59e0b; margin-left:5px;">Actualizar</button>
-                        <button id="btnCancel" class="btn-delete" onclick="limpiarFormulario()" style="display:none; margin-left:5px;">Cancelar</button>
-                    </div>
-                </div>
+
+
+
+
+    <div id="action-bar" class="action-bar" style="margin-bottom: 2rem;">
+    <div style="background:#334155; padding:15px; border-radius:8px; display:flex; gap:10px; align-items:flex-end; flex-wrap: wrap;">
+        
+        <div style="display:flex; flex-direction:column; gap:5px;">
+            <input id="pNombre" placeholder="Nombre Producto" style="padding:8px; border-radius:4px; border:none;">
+            <input id="pDesc" placeholder="Descripción" style="padding:8px; border-radius:4px; border:none;">
+        </div>
+
+        <div style="display:flex; flex-direction:column; gap:5px;">
+            <input id="pPrecio" type="number" placeholder="$ Precio" style="width:80px; padding:8px; border-radius:4px; border:none;">
+            <input id="pStock" type="number" placeholder="Stock" style="width:80px; padding:8px; border-radius:4px; border:none;">
+        </div>
+        
+        <div style="display:flex; flex-direction:column;">
+            <label style="color:white; font-size:0.8em; margin-bottom:2px;">Fotos (Max 5):</label>
+            <input type="file" id="pFotos" multiple accept="image/*" style="color:white; font-size:0.9em;">
+        </div>
+
+        <button class="btn-primary" onclick="crearProductoConFotos()">+ Publicar</button>
+        
+        <button id="btnUpdateP" class="btn-primary" onclick="actualizarProducto()" style="display:none; background-color: #f59e0b; margin-left:5px;">Actualizar Datos</button>
+        <button id="btnCancelP" class="btn-delete" onclick="limpiarFormulario()" style="display:none; margin-left:5px;">Cancelar</button>
+    </div>
+    </div>
+
+
+
 
                 <table class="data-table">
                     <thead>
@@ -74,170 +94,232 @@
     </section>
 
     <script>
-        let vistaActual = 'visual';
-        let idSeleccionado = null;
+        // --- VARIABLES GLOBALES ---
+    let vistaActual = 'visual';
+    let idSeleccionado = null;
 
-        // Cargar vista inicial
-        document.addEventListener('DOMContentLoaded', () => {
-            cargarVista('visual');
-        });
+    // Cargar vista inicial al abrir la página
+    document.addEventListener('DOMContentLoaded', () => {
+        cargarVista('visual');
+    });
 
-        async function cargarVista(vista) {
-            vistaActual = vista;
-            limpiarFormulario();
+    // --- ROUTER DE VISTAS ---
+    async function cargarVista(vista) {
+        vistaActual = vista;
+        limpiarFormulario(); // Limpia errores previos
 
-            // 1. Manejo de Pestañas (Visual vs Tabla)
-            const visualDiv = document.getElementById('vista-visual');
-            const tablaDiv = document.getElementById('vista-tabla');
-            const tabs = document.querySelectorAll('.tab-btn');
+        // 1. Manejo de Pestañas (Visual vs Tabla)
+        const visualDiv = document.getElementById('vista-visual');
+        const tablaDiv = document.getElementById('vista-tabla');
+        const tabs = document.querySelectorAll('.tab-btn');
 
-            // Resetear clases activas
-            tabs.forEach(t => t.classList.remove('active'));
+        // Resetear clases activas
+        tabs.forEach(t => t.classList.remove('active'));
 
-            if (vista === 'visual') {
-                visualDiv.style.display = 'block';
-                tablaDiv.style.display = 'none';
-                tabs[0].classList.add('active'); // Botón 1 activo
-            } else {
-                visualDiv.style.display = 'none';
-                tablaDiv.style.display = 'block';
-                tabs[1].classList.add('active'); // Botón 2 activo
-            }
-
-            // 2. Obtener Datos del Backend
-            try {
-                const res = await fetch('/products');
-                const products = await res.json();
-
-                // Renderizar según la vista
-                if (vista === 'visual') {
-                    renderCards(products);
-                } else {
-                    renderTable(products);
-                }
-            } catch (error) {
-                console.error(error);
-                alert("Error al cargar productos");
-            }
+        if (vista === 'visual') {
+            visualDiv.style.display = 'block';
+            tablaDiv.style.display = 'none';
+            if(tabs[0]) tabs[0].classList.add('active');
+        } else {
+            visualDiv.style.display = 'none';
+            tablaDiv.style.display = 'block';
+            if(tabs[1]) tabs[1].classList.add('active');
         }
 
-        // --- RENDERIZADO VISUAL (TARJETAS) ---
-        function renderCards(products) {
-            const container = document.getElementById('grid-cards');
-            container.innerHTML = '';
+        // 2. Obtener Datos del Backend
+        try {
+            const res = await fetch('/products');
+            const products = await res.json();
 
-            if (products.length === 0) {
-                container.innerHTML = '<p style="color:white;">No hay productos en el catálogo.</p>';
-                return;
+            // Renderizar según la vista
+            if (vista === 'visual') {
+                renderCards(products);
+            } else {
+                renderTable(products); // <--- AHORA SÍ EXISTE ESTA FUNCIÓN
             }
+        } catch (error) {
+            console.error(error);
+            alert("Error al cargar productos: " + error.message);
+        }
+    }
 
-            products.forEach(p => {
-                container.innerHTML += `
-                    <div class="product-card">
-                        <div class="card-img-top">
-                            <i class="fa-solid fa-box"></i> </div>
-                        <div class="card-body">
-                            <h3 class="card-title">${p.nombre}</h3>
-                            <p class="card-text">${p.descripcion || 'Sin descripción disponible.'}</p>
-                            <div class="card-footer">
-                                <span class="price-tag">$${p.precio}</span>
-                                <span style="font-size:0.8rem; color:#94a3b8;">ID: #${p.id}</span>
-                            </div>
+    // --- RENDERIZADO VISUAL (TARJETAS) ---
+    function renderCards(products) {
+        const container = document.getElementById('grid-cards');
+        container.innerHTML = '';
+
+        if (products.length === 0) {
+            container.innerHTML = '<p style="color:white; padding:20px;">No hay productos en el catálogo.</p>';
+            return;
+        }
+
+        products.forEach(p => {
+            // Usamos la primera imagen de la galería o la default
+            const imagen = (p.galeria && p.galeria.length > 0) ? p.galeria[0] : p.imagen;
+            
+            container.innerHTML += `
+                <div class="product-card">
+                    <div class="card-img-top">
+                        <img src="${imagen}" alt="${p.nombre}" style="width:100%; height:100%; object-fit:cover;">
+                    </div>
+                    <div class="card-body">
+                        <h3 class="card-title">${p.nombre}</h3>
+                        <p class="card-text">${p.descripcion || 'Sin descripción'}</p>
+                        <p style="font-size:0.8em; color:#ccc;">Stock: ${p.stock}</p>
+                        <div class="card-footer">
+                            <span class="price-tag">$${p.precio}</span>
                         </div>
                     </div>
-                `;
-            });
+                </div>
+            `;
+        });
+    }
+
+    // --- RENDERIZADO TABLA (CON STOCK) ---
+    function renderTable(products) {
+        const tbody = document.getElementById('table-body');
+        // Actualizamos el encabezado para asegurar que tenga la columna Stock
+        const thead = document.querySelector('.data-table thead');
+        if(thead) {
+            thead.innerHTML = `
+                <tr>
+                    <th>ID</th>
+                    <th>Img</th>
+                    <th>Producto</th>
+                    <th>Descripción</th>
+                    <th>Precio</th>
+                    <th>Stock</th> <th>Acciones</th>
+                </tr>
+            `;
         }
 
-        // --- RENDERIZADO TABLA (IGUAL QUE ADMIN) ---
-        function renderTable(products) {
-            const tbody = document.getElementById('table-body');
-            tbody.innerHTML = '';
+        tbody.innerHTML = '';
 
-            if (products.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="6" align="center">Sin productos</td></tr>';
-                return;
-            }
-
-            products.forEach(p => {
-                const prodStr = JSON.stringify(p).replace(/'/g, "&#39;");
-
-                tbody.innerHTML += `
-                    <tr onclick='seleccionarProducto(${prodStr})' style="cursor: pointer;" title="Clic para editar">
-                        <td>#${p.id}</td>
-                        <td>
-                            <div style="background:#334155; color:#94a3b8; width:40px; height:40px; display:flex; align-items:center; justify-content:center; border-radius:4px; font-size:0.7em;">IMG</div>
-                        </td>
-                        <td><strong>${p.nombre}</strong></td>
-                        <td>${p.descripcion || '-'}</td>
-                        <td style="color:var(--secondary); font-weight:bold;">$${p.precio}</td>
-                        <td>
-                            <button class="btn-delete" onclick="event.stopPropagation(); eliminarProducto(${p.id})">
-                                <i class="fa-solid fa-trash"></i>
-                            </button>
-                        </td>
-                    </tr>
-                `;
-            });
+        if (products.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="7" align="center">Sin productos</td></tr>';
+            return;
         }
 
-        // --- LÓGICA CRUD (Misma lógica que Admin) ---
-
-        function seleccionarProducto(prod) {
-            idSeleccionado = prod.id;
-            document.getElementById('pNombre').value = prod.nombre;
-            document.getElementById('pDesc').value = prod.descripcion;
-            document.getElementById('pPrecio').value = prod.precio;
-
-            document.getElementById('btnUpdate').style.display = 'inline-block';
-            document.getElementById('btnCancel').style.display = 'inline-block';
-        }
-
-        function limpiarFormulario() {
-            idSeleccionado = null;
-            document.getElementById('pNombre').value = '';
-            document.getElementById('pDesc').value = '';
-            document.getElementById('pPrecio').value = '';
+        products.forEach(p => {
+            const prodStr = JSON.stringify(p).replace(/'/g, "&#39;");
             
-            document.getElementById('btnUpdate').style.display = 'none';
-            document.getElementById('btnCancel').style.display = 'none';
+            // Estilo para stock bajo
+            const stockStyle = p.stock < 5 ? 'color:#ef4444; font-weight:bold;' : 'color:#10b981;';
+            const imagen = (p.galeria && p.galeria.length > 0) ? p.galeria[0] : p.imagen;
+
+            tbody.innerHTML += `
+                <tr onclick='seleccionarProducto(${prodStr})' style="cursor: pointer;" title="Clic para editar">
+                    <td>#${p.id}</td>
+                    <td>
+                        <div style="width:40px; height:40px; overflow:hidden; border-radius:4px; background:#334155;">
+                            <img src="${imagen}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='/img/default.png'">
+                        </div>
+                    </td>
+                    <td><strong>${p.nombre}</strong></td>
+                    <td>${p.descripcion || '-'}</td>
+                    <td style="color:var(--secondary); font-weight:bold;">$${p.precio}</td>
+                    <td style="${stockStyle}">${p.stock}</td>
+                    <td>
+                        <button class="btn-delete" onclick="event.stopPropagation(); eliminarProducto(${p.id})">
+                            <i class="fa-solid fa-trash"></i>
+                        </button>
+                    </td>
+                </tr>
+            `;
+        });
+    }
+
+    // --- LÓGICA DEL FORMULARIO ---
+
+    function seleccionarProducto(prod) {
+        idSeleccionado = prod.id;
+        document.getElementById('pNombre').value = prod.nombre;
+        document.getElementById('pDesc').value = prod.descripcion;
+        document.getElementById('pPrecio').value = prod.precio;
+        document.getElementById('pStock').value = prod.stock;
+
+        document.getElementById('btnUpdateP').style.display = 'inline-block';
+        document.getElementById('btnCancelP').style.display = 'inline-block';
+    }
+
+    function limpiarFormulario() {
+        idSeleccionado = null;
+        if(document.getElementById('pNombre')) document.getElementById('pNombre').value = '';
+        if(document.getElementById('pDesc')) document.getElementById('pDesc').value = '';
+        if(document.getElementById('pPrecio')) document.getElementById('pPrecio').value = '';
+        if(document.getElementById('pStock')) document.getElementById('pStock').value = '';
+        if(document.getElementById('pFotos')) document.getElementById('pFotos').value = '';
+        
+        if(document.getElementById('btnUpdateP')) document.getElementById('btnUpdateP').style.display = 'none';
+        if(document.getElementById('btnCancelP')) document.getElementById('btnCancelP').style.display = 'none';
+    }
+
+    // --- OPERACIONES CRUD ---
+
+    // 1. CREAR (Con Fotos y Stock)
+    async function crearProductoConFotos() {
+        const nombre = document.getElementById('pNombre').value;
+        const descripcion = document.getElementById('pDesc').value;
+        const precio = document.getElementById('pPrecio').value;
+        const stock = document.getElementById('pStock').value;
+        const fileInput = document.getElementById('pFotos');
+
+        if(!nombre || !precio) return alert("Nombre y Precio obligatorios");
+
+        const formData = new FormData();
+        formData.append('nombre', nombre);
+        formData.append('descripcion', descripcion);
+        formData.append('precio', precio);
+        formData.append('stock', stock);
+
+        for (let i = 0; i < fileInput.files.length; i++) {
+            formData.append('imagenes', fileInput.files[i]);
         }
 
-        async function crearProducto() {
-            const nombre = document.getElementById('pNombre').value;
-            const descripcion = document.getElementById('pDesc').value;
-            const precio = document.getElementById('pPrecio').value;
-
-            if(!nombre || !precio) return alert("Nombre y Precio obligatorios");
-
-            await fetch('/products', {
+        try {
+            const res = await fetch('/products', {
                 method: 'POST',
-                headers: {'Content-Type':'application/json'},
-                body: JSON.stringify({ nombre, descripcion, precio })
+                body: formData
             });
-            cargarVista('tabla');
-        }
 
-        async function actualizarProducto() {
-            if(!idSeleccionado) return alert("Selecciona un producto");
-            const nombre = document.getElementById('pNombre').value;
-            const descripcion = document.getElementById('pDesc').value;
-            const precio = document.getElementById('pPrecio').value;
-
-            await fetch('/products/' + idSeleccionado, {
-                method: 'PUT',
-                headers: {'Content-Type':'application/json'},
-                body: JSON.stringify({ nombre, descripcion, precio })
-            });
-            limpiarFormulario();
-            cargarVista('tabla');
+            if(res.ok) {
+                alert("Producto creado");
+                cargarVista('tabla');
+            } else {
+                alert("Error al crear");
+            }
+        } catch (error) {
+            console.error(error);
+            alert("Error de conexión");
         }
+    }
 
-        async function eliminarProducto(id) {
-            if(!confirm('¿Eliminar producto?')) return;
-            await fetch('/products/' + id, { method: 'DELETE' });
-            cargarVista('tabla');
-        }
+    // 2. ACTUALIZAR (Datos básicos)
+    async function actualizarProducto() {
+        if(!idSeleccionado) return alert("Selecciona un producto");
+        
+        const nombre = document.getElementById('pNombre').value;
+        const descripcion = document.getElementById('pDesc').value;
+        const precio = document.getElementById('pPrecio').value;
+        const stock = document.getElementById('pStock').value;
+
+        // Nota: Por simplicidad, aquí usamos JSON y no actualizamos fotos en el UPDATE
+        await fetch('/products/' + idSeleccionado, {
+            method: 'PUT',
+            headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ nombre, descripcion, precio, stock })
+        });
+        
+        limpiarFormulario();
+        cargarVista('tabla');
+    }
+
+    // 3. ELIMINAR
+    async function eliminarProducto(id) {
+        if(!confirm('¿Eliminar producto?')) return;
+        await fetch('/products/' + id, { method: 'DELETE' });
+        cargarVista('tabla');
+    }
     </script>
 </body>
 </html>

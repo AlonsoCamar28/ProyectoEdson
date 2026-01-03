@@ -115,20 +115,31 @@
             } else if (vista === 'productos') {
                 
                 // Inyectar Formulario de Productos (AHORA CON INPUT DE STOCK)
-                actionBar.innerHTML = `
-                    <div class="inline-form">
-                        <input id="pNombre" placeholder="Nombre Producto" />
-                        <input id="pDesc" placeholder="Descripción breve" />
-                        
-                        <input id="pPrecio" type="number" placeholder="$ Precio" style="width:100px;" />
-                        <input id="pStock" type="number" placeholder="# Stock" style="width:80px;" /> 
-                        
-                        <button class="btn-primary" onclick="crearProducto()">+ Agregar</button>
+               // Copia esto dentro de tu actionBar.innerHTML
+                    actionBar.innerHTML = `
+                        <div style="background:#334155; padding:15px; border-radius:8px; display:flex; gap:10px; align-items:flex-end; flex-wrap: wrap;">
+                            
+                            <div style="display:flex; flex-direction:column; gap:5px;">
+                                <input id="pNombre" placeholder="Nombre Producto" style="padding:8px; border-radius:4px; border:none;">
+                                <input id="pDesc" placeholder="Descripción" style="padding:8px; border-radius:4px; border:none;">
+                            </div>
 
-                        <button id="btnUpdateP" class="btn-primary" onclick="actualizarProducto()" style="display:none; background-color: #f59e0b; margin-left:5px;">Actualizar</button>
-                        <button id="btnCancelP" class="btn-delete" onclick="limpiarFormulario()" style="display:none; margin-left:5px;">Cancelar</button>
-                    </div>
-                `;
+                            <div style="display:flex; flex-direction:column; gap:5px;">
+                                <input id="pPrecio" type="number" placeholder="$ Precio" style="width:80px; padding:8px; border-radius:4px; border:none;">
+                                <input id="pStock" type="number" placeholder="Stock" style="width:80px; padding:8px; border-radius:4px; border:none;">
+                            </div>
+                            
+                            <div style="display:flex; flex-direction:column;">
+                                <label style="color:white; font-size:0.8em; margin-bottom:2px;">Fotos (Max 5):</label>
+                                <input type="file" id="pFotos" multiple accept="image/*" style="color:white; font-size:0.9em;">
+                            </div>
+
+                            <button class="btn-primary" onclick="crearProductoConFotos()">+ Publicar</button>
+                            
+                            <button id="btnUpdateP" class="btn-primary" onclick="actualizarProducto()" style="display:none; background-color: #f59e0b; margin-left:5px;">Actualizar Datos</button>
+                            <button id="btnCancelP" class="btn-delete" onclick="limpiarFormulario()" style="display:none; margin-left:5px;">Cancelar</button>
+                        </div>
+                    `;
 
                 // Inyectar Encabezados (AHORA CON COLUMNA STOCK)
                 tableHead.innerHTML = `
@@ -184,30 +195,54 @@
         });
     }
 
-   function renderProducts(products) {
+   function renderProducts(products) { // O renderTable en vendedor.html
     const tbody = document.getElementById('table-body');
+    const thead = document.getElementById('table-head'); // Aseguramos el encabezado correcto
+    
+    // Actualizamos el encabezado dinámicamente para asegurar que tenga Stock
+    if(thead) {
+        thead.innerHTML = `
+            <tr>
+                <th>ID</th>
+                <th>Img</th>
+                <th>Producto</th>
+                <th>Descripción</th>
+                <th>Precio</th>
+                <th>Stock</th> <th>Acciones</th>
+            </tr>
+        `;
+    }
+
     tbody.innerHTML = '';
 
-    if(products.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No hay productos</td></tr>'; // Aumentamos colspan a 7
+    if (products.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center;">No hay productos</td></tr>';
         return;
     }
 
     products.forEach(p => {
         const prodStr = JSON.stringify(p).replace(/'/g, "&#39;");
 
-        // Lógica para resaltar stock bajo
-        const stockStyle = p.stock < 5 ? 'color: red; font-weight: bold;' : 'color: #10b981;';
+        // Lógica visual: Si stock es menor a 5, ponerlo en rojo
+        const stockStyle = p.stock < 5 ? 'color: #ef4444; font-weight: bold;' : 'color: #10b981;';
         const stockText = p.stock < 5 ? `${p.stock} (Bajo)` : p.stock;
+
+        // Si el producto tiene galería, usamos la primera foto, si no, la default
+        const imagenMostrar = (p.galeria && p.galeria.length > 0) ? p.galeria[0] : p.imagen;
 
         tbody.innerHTML += `
             <tr onclick='seleccionarProducto(${prodStr})' style="cursor: pointer; transition: 0.2s;" title="Clic para editar">
                 <td>#${p.id}</td>
-                <td><div style="background:#334155; color:#94a3b8; width:40px; height:40px; display:flex; align-items:center; justify-content:center; border-radius:4px; font-size:0.7em;">IMG</div></td>
+                <td>
+                    <div style="width:40px; height:40px; overflow:hidden; border-radius:4px; background:#334155;">
+                        <img src="${imagenMostrar}" style="width:100%; height:100%; object-fit:cover;" onerror="this.src='/img/default.png'">
+                    </div>
+                </td>
                 <td><strong>${p.nombre}</strong></td>
                 <td>${p.descripcion || '-'}</td>
                 <td class="price">$${p.precio}</td>
-                <td style="${stockStyle}">${stockText}</td> <td>
+                <td style="${stockStyle}">${stockText}</td>
+                <td>
                     <button class="btn-delete" onclick="event.stopPropagation(); eliminarProducto(${p.id})">
                         <i class="fa-solid fa-trash"></i>
                     </button>
@@ -320,22 +355,49 @@ if(document.getElementById('pNombre')) {
 
     // --- OPERACIONES CRUD: PRODUCTOS ---
 
-   // Crear Producto
-async function crearProducto() {
+// PEGAR ESTO DENTRO DE LAS ETIQUETAS <script> EN ADMIN.HTML
+
+async function crearProductoConFotos() {
     const nombre = document.getElementById('pNombre').value;
     const descripcion = document.getElementById('pDesc').value;
     const precio = document.getElementById('pPrecio').value;
-    const stock = document.getElementById('pStock').value; // <--- Nuevo
+    const stock = document.getElementById('pStock').value;
+    const fileInput = document.getElementById('pFotos');
 
-    if(!nombre || !precio) return alert("Nombre y Precio obligatorios");
+    // Validaciones
+    if(!nombre || !precio) return alert("Nombre y Precio requeridos");
+    // Validación opcional: quitar si quieres permitir crear sin fotos
+    // if(fileInput.files.length === 0) return alert("Debes seleccionar al menos una imagen");
 
-    await fetch('/products', {
-        method: 'POST',
-        headers: {'Content-Type':'application/json'},
-        // Enviamos stock
-        body: JSON.stringify({ nombre, descripcion, precio, stock }) 
-    });
-    cargarVista('productos');
+    const formData = new FormData();
+    formData.append('nombre', nombre);
+    formData.append('descripcion', descripcion);
+    formData.append('precio', precio);
+    formData.append('stock', stock);
+
+    // Agregamos cada archivo seleccionado
+    for (let i = 0; i < fileInput.files.length; i++) {
+        formData.append('imagenes', fileInput.files[i]);
+    }
+
+    try {
+        const res = await fetch('/products', {
+            method: 'POST',
+            body: formData 
+        });
+
+        if(res.ok) {
+            alert("Producto creado exitosamente");
+            // Recargar la vista actual (usa la variable global vistaActual)
+            cargarVista(vistaActual); 
+        } else {
+            const errorTxt = await res.text();
+            alert("Error al crear: " + errorTxt);
+        }
+    } catch (error) {
+        console.error(error);
+        alert("Error de conexión");
+    }
 }
 
 

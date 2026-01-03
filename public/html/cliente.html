@@ -191,33 +191,71 @@ function renderProductos(products) {
     contenedor.innerHTML = '';
 
     if (products.length === 0) {
-        contenedor.innerHTML = `
-            <div class="empty-state">
-                <h3>😔 No hay productos</h3>
-                <p>No se encontraron productos en esta categoría</p>
-            </div>
-        `;
+        contenedor.innerHTML = '<div class="empty-state">No hay productos</div>';
         return;
     }
 
     products.forEach(p => {
+        // Si el backend no mandó galería (porque es un producto viejo), usamos la imagen normal
+        const imagenes = p.galeria && p.galeria.length > 0 ? p.galeria : [p.imagen];
+        
+        // Generamos el HTML de las imágenes
+        let slidesHTML = '';
+        imagenes.forEach((img, index) => {
+            // La primera imagen es activa por defecto
+            const activeClass = index === 0 ? 'active' : '';
+            slidesHTML += `<img src="${img}" class="carousel-slide ${activeClass}" id="img-${p.id}-${index}">`;
+        });
+
+        // Botones (solo si hay más de 1 foto)
+        const botonesHTML = imagenes.length > 1 ? `
+            <a class="prev" onclick="moverSlide(event, ${p.id}, -1)">&#10094;</a>
+            <a class="next" onclick="moverSlide(event, ${p.id}, 1)">&#10095;</a>
+        ` : '';
+
         const card = document.createElement('div');
         card.className = 'card';
         card.innerHTML = `
-            <img src="${p.imagen}" alt="${p.nombre}" class="product-img">
+            <div class="carousel-container" id="carousel-${p.id}" data-index="0" data-total="${imagenes.length}">
+                ${slidesHTML}
+                ${botonesHTML}
+            </div>
             <div class="card-body">
                 <h3 class="card-title">${p.nombre}</h3>
-                <p class="card-text">${p.descripcion || 'Sin descripción'}</p>
+                <p class="card-text">${p.descripcion || ''}</p>
+                <p style="color:#aaa; font-size:0.8em;">Stock: ${p.stock}</p>
                 <div class="card-footer">
-                    <span class="price-tag">$${parseFloat(p.precio).toLocaleString('es-MX', {minimumFractionDigits: 2})}</span>
+                    <span class="price-tag">$${parseFloat(p.precio).toLocaleString()}</span>
                 </div>
-                <button class="btn-primary" onclick="comprar(${p.id})">
-                    🛒 Comprar
-                </button>
+                <button class="btn-primary" onclick="comprar(${p.id})">🛒 Agregar</button>
             </div>
         `;
         contenedor.appendChild(card);
     });
+}
+
+// FUNCIÓN PARA MOVER LAS FLECHAS
+function moverSlide(event, prodId, direction) {
+    // Evitar que al dar clic a la flecha se abra el producto (si tuvieras enlace)
+    event.stopPropagation();
+
+    const container = document.getElementById(`carousel-${prodId}`);
+    let currentIndex = parseInt(container.getAttribute('data-index'));
+    const total = parseInt(container.getAttribute('data-total'));
+
+    // Ocultar imagen actual
+    document.getElementById(`img-${prodId}-${currentIndex}`).classList.remove('active');
+
+    // Calcular nuevo índice
+    currentIndex += direction;
+    if (currentIndex >= total) currentIndex = 0; // Vuelta al inicio
+    if (currentIndex < 0) currentIndex = total - 1; // Vuelta al final
+
+    // Mostrar nueva imagen
+    document.getElementById(`img-${prodId}-${currentIndex}`).classList.add('active');
+    
+    // Guardar nuevo índice
+    container.setAttribute('data-index', currentIndex);
 }
 
 

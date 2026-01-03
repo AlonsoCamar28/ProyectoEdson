@@ -313,3 +313,27 @@ ON p.id = x.id
 SET p.imagen = '/img/foco.jpg';
 
 SELECT nombre, imagen FROM products;
+
+
+-- Actualizaciones para la segunda parte del proyecto
+
+USE novastore;
+-- Agregar columna stock (por defecto 0 si no se especifica)
+ALTER TABLE products ADD COLUMN stock INT DEFAULT 0;
+-- (Opcional) Darle stock inicial de 10 a todos los productos actuales para pruebas
+SET SQL_SAFE_UPDATES = 0;
+UPDATE products SET stock = 10;
+SET SQL_SAFE_UPDATES = 1;
+
+-- Creacion de tabla para alojar las imagenes de los productos
+
+CREATE TABLE IF NOT EXISTS product_images (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT,
+    imagen_url VARCHAR(255),
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE
+);
+
+-- 2. Asegurarnos que la tabla products tenga stock (si no lo hiciste en el paso anterior)
+-- Si ya lo hiciste y te da error, ignora esta línea.
+ALTER TABLE products ADD COLUMN stock INT DEFAULT 0;

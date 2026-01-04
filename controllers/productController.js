@@ -1,16 +1,38 @@
 const db = require('../config/db');
+const fs = require('fs'); // Para crear carpetas y eliminar archivos
+const path = require('path');
+
+// --- FUNCIÓN AUXILIAR: Crear carpeta si no existe ---
+const crearCarpetaSiNoExiste = (rutaCarpeta) => {
+    if (!fs.existsSync(rutaCarpeta)) {
+        fs.mkdirSync(rutaCarpeta, { recursive: true });
+        console.log(`📁 Carpeta creada: ${rutaCarpeta}`);
+    }
+};
 
 // --- FUNCIÓN AUXILIAR: Obtener imágenes extra de un producto ---
 const getImagesForProduct = (productId) => {
     return new Promise((resolve, reject) => {
         db.query('SELECT imagen_url FROM product_images WHERE product_id = ?', [productId], (err, results) => {
-            if (err) resolve([]); // Si hay error, devolvemos array vacío para no romper nada
+            if (err) resolve([]);
             else resolve(results.map(r => r.imagen_url));
         });
     });
 };
 
-// 1. OBTENER TODOS (Con Galería de Imágenes)
+// --- FUNCIÓN AUXILIAR: Eliminar carpeta de producto (al borrar producto) ---
+const eliminarCarpetaProducto = (productId) => {
+    const carpetaProducto = path.join(__dirname, '../public/img/products', `producto-${productId}`);
+    
+    if (fs.existsSync(carpetaProducto)) {
+        fs.rmSync(carpetaProducto, { recursive: true, force: true });
+        console.log(`🗑️ Carpeta eliminada: ${carpetaProducto}`);
+    }
+};
+
+// ============================================
+// 1. OBTENER TODOS LOS PRODUCTOS (Con Galería)
+// ============================================
 exports.getProducts = (req, res) => {
     db.query('SELECT * FROM products', async (err, products) => {
         if (err) {
@@ -18,11 +40,9 @@ exports.getProducts = (req, res) => {
             return res.status(500).send('Error DB');
         }
 
-        // Agregamos las imágenes extra a cada producto
         try {
             const productsWithImages = await Promise.all(products.map(async (p) => {
                 const extraImages = await getImagesForProduct(p.id);
-                // La galería incluye la imagen principal + las extras
                 return { ...p, galeria: [p.imagen, ...extraImages] };
             }));
             res.json(productsWithImages);
@@ -33,20 +53,21 @@ exports.getProducts = (req, res) => {
     });
 };
 
-// 2. CREAR PRODUCTO (Soporte Múltiples Imágenes y Stock)
+// ============================================
+// 2. CREAR PRODUCTO (CON CARPETA PROPIA)
+// ============================================
 exports.createProduct = (req, res) => {
     const { nombre, descripcion, precio, stock } = req.body;
-    const files = req.files; // Imágenes subidas por Multer
+    const files = req.files;
 
     if (!nombre || !precio) return res.status(400).send('Faltan datos');
 
-    // La primera imagen será la portada, si no hay, ponemos default
-    const mainImage = files && files.length > 0 ? `/img/${files[0].filename}` : '/img/default.png';
     const stockValido = stock ? parseInt(stock) : 0;
 
+    // Primero insertamos el producto SIN imágenes para obtener su ID
     const sql = 'INSERT INTO products (nombre, descripcion, precio, stock, imagen) VALUES (?, ?, ?, ?, ?)';
-
-    db.query(sql, [nombre, descripcion, precio, stockValido, mainImage], (err, result) => {
+    
+    db.query(sql, [nombre, descripcion, precio, stockValido, '/img/default.png'], (err, result) => {
         if (err) {
             console.error(err);
             return res.status(500).send('Error creando producto');
@@ -54,57 +75,137 @@ exports.createProduct = (req, res) => {
         
         const productId = result.insertId;
 
-        // Si hay más de 1 imagen, guardamos las extras en la tabla 'product_images'
-        if (files && files.length > 1) {
-            // Tomamos todas menos la primera (que ya es portada)
-            const extraImages = files.slice(1).map(file => [productId, `/img/${file.filename}`]);
-            
-            if (extraImages.length > 0) {
-                const sqlImg = 'INSERT INTO product_images (product_id, imagen_url) VALUES ?';
-                db.query(sqlImg, [extraImages], (error) => {
-                    if (error) console.error("Error guardando imágenes extra", error);
-                });
-            }
+        // Si NO hay imágenes, dejamos la default y terminamos
+        if (!files || files.length === 0) {
+            return res.status(201).json({ 
+                msg: 'Producto creado (sin imágenes)', 
+                productId 
+            });
         }
-        res.status(201).send('Producto creado con imágenes');
+
+        // Crear carpeta específica para este producto
+        const carpetaProducto = path.join(__dirname, '../public/img/products', `producto-${productId}`);
+        crearCarpetaSiNoExiste(carpetaProducto);
+
+        // Mover las imágenes a la carpeta del producto
+        const imagenesMovidas = [];
+        
+        files.forEach((file, index) => {
+            const nombreOriginal = file.filename;
+            const rutaAntigua = file.path;
+            const rutaNueva = path.join(carpetaProducto, nombreOriginal);
+            
+            // Mover archivo
+            fs.renameSync(rutaAntigua, rutaNueva);
+            
+            // Guardar ruta relativa para la BD
+            const rutaBD = `/img/products/producto-${productId}/${nombreOriginal}`;
+            imagenesMovidas.push(rutaBD);
+        });
+
+        // Actualizar imagen principal (la primera)
+        const mainImage = imagenesMovidas[0];
+        db.query('UPDATE products SET imagen = ? WHERE id = ?', [mainImage, productId]);
+
+        // Guardar imágenes extras (de la 2 en adelante)
+        if (imagenesMovidas.length > 1) {
+            const extraImages = imagenesMovidas.slice(1).map(img => [productId, img]);
+            
+            const sqlImg = 'INSERT INTO product_images (product_id, imagen_url) VALUES ?';
+            db.query(sqlImg, [extraImages], (error) => {
+                if (error) console.error("Error guardando imágenes extra", error);
+            });
+        }
+
+        res.status(201).json({ 
+            msg: 'Producto creado con imágenes', 
+            productId,
+            imagenes: imagenesMovidas.length
+        });
     });
 };
 
+// ============================================
 // 3. ACTUALIZAR PRODUCTO
+// ============================================
 exports.updateProduct = (req, res) => {
     const { id } = req.params;
     const { nombre, descripcion, precio, stock } = req.body;
+    const files = req.files;
     
-    // Nota: Por simplicidad no actualizamos imágenes aquí, solo datos
     const stockValido = stock ? parseInt(stock) : 0;
     
+    // Actualizar datos básicos
     const sql = 'UPDATE products SET nombre=?, descripcion=?, precio=?, stock=? WHERE id=?';
     db.query(sql, [nombre, descripcion, precio, stockValido, id], (err) => {
         if (err) {
             console.error(err);
             return res.status(500).send('Error updating');
         }
-        res.send('Actualizado');
+
+        // Si se subieron nuevas imágenes, agregarlas a la carpeta del producto
+        if (files && files.length > 0) {
+            const carpetaProducto = path.join(__dirname, '../public/img/products', `producto-${id}`);
+            crearCarpetaSiNoExiste(carpetaProducto);
+
+            const nuevasImagenes = [];
+            
+            files.forEach((file) => {
+                const nombreOriginal = file.filename;
+                const rutaAntigua = file.path;
+                const rutaNueva = path.join(carpetaProducto, nombreOriginal);
+                
+                fs.renameSync(rutaAntigua, rutaNueva);
+                
+                const rutaBD = `/img/products/producto-${id}/${nombreOriginal}`;
+                nuevasImagenes.push([id, rutaBD]);
+            });
+
+            // Agregar nuevas imágenes a la tabla
+            if (nuevasImagenes.length > 0) {
+                const sqlImg = 'INSERT INTO product_images (product_id, imagen_url) VALUES ?';
+                db.query(sqlImg, [nuevasImagenes], (error) => {
+                    if (error) console.error("Error agregando nuevas imágenes", error);
+                });
+            }
+        }
+
+        res.send('Producto actualizado');
     });
 };
 
-// 4. BORRAR PRODUCTO
+// ============================================
+// 4. ELIMINAR PRODUCTO (Y SU CARPETA)
+// ============================================
 exports.deleteProduct = (req, res) => {
-    db.query('DELETE FROM products WHERE id = ?', [req.params.id], (err) => {
-        if(err) {
+    const { id } = req.params;
+
+    // Primero eliminar registros de imágenes
+    db.query('DELETE FROM product_images WHERE product_id = ?', [id], (err) => {
+        if (err) console.error('Error eliminando imágenes:', err);
+    });
+
+    // Luego eliminar el producto
+    db.query('DELETE FROM products WHERE id = ?', [id], (err) => {
+        if (err) {
             console.error(err);
             return res.status(500).send('Error');
         }
-        res.send('Eliminado');
+
+        // Finalmente eliminar la carpeta física del producto
+        eliminarCarpetaProducto(id);
+
+        res.send('Producto y carpeta eliminados');
     });
 };
 
-// 5. OBTENER DESTACADOS (¡Nombre corregido: getFeatured!)
+// ============================================
+// 5. OBTENER DESTACADOS
+// ============================================
 exports.getFeatured = (req, res) => {
     db.query('SELECT * FROM products ORDER BY RAND() LIMIT 5', async (err, products) => {
         if (err) return res.status(500).send('Error db');
         
-        // También les ponemos galería por si acaso
         const productsWithImages = await Promise.all(products.map(async (p) => {
             const extraImages = await getImagesForProduct(p.id);
             return { ...p, galeria: [p.imagen, ...extraImages] };
@@ -114,10 +215,10 @@ exports.getFeatured = (req, res) => {
     });
 };
 
-// 6. OBTENER POR CATEGORÍA (¡Nombre corregido: getByCategory!)
+// ============================================
+// 6. OBTENER POR CATEGORÍA
+// ============================================
 exports.getByCategory = (req, res) => {
-    // Como aún no tienes tabla intermedia de categorías real, devolvemos todos
-    // o filtramos si tuvieras la columna category_id
     const sql = 'SELECT * FROM products'; 
     db.query(sql, async (err, products) => {
         if (err) return res.status(500).send('Error db');

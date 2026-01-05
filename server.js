@@ -26,6 +26,8 @@ app.use('/products', require('./routes/products.routes'));
 app.use('/categories', require('./routes/categories.routes'));
 app.use('/cart', require('./routes/cart.routes'));
 app.use('/orders', require('./routes/orders.routes'));
+app.use('/payments', require('./routes/payments.routes'));
+app.use('/ratings', require('./routes/rating.routes'));
 
 
 

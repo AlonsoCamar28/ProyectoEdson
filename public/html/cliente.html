@@ -108,6 +108,7 @@
              <a href="/html/cart.html">🛒 Carrito (<span id="cartCount">0</span>)</a>
             </li>
             <li><a href="/">Inicio</a></li>
+            <li><a href="/html/ratings.html">⭐ Calificar Compras</a></li>
             <li><a href="/auth/logout">Salir</a></li>
         </ul>
     </div>
@@ -229,6 +230,7 @@ async function cargarPorCategoria(id, nombre) {
 
 // Renderizar productos en el grid
 
+
 function renderProductos(products) {
     const contenedor = document.getElementById('products');
     contenedor.innerHTML = '';
@@ -239,37 +241,52 @@ function renderProductos(products) {
     }
 
     products.forEach(p => {
-        // Si el backend no mandó galería (porque es un producto viejo), usamos la imagen normal
         const imagenes = p.galeria && p.galeria.length > 0 ? p.galeria : [p.imagen];
         
-        // Generamos el HTML de las imágenes
         let slidesHTML = '';
         imagenes.forEach((img, index) => {
             const activeClass = index === 0 ? 'active' : '';
             slidesHTML += `<img src="${img}" class="carousel-slide ${activeClass}" id="img-${p.id}-${index}">`;
         });
 
-        // Botones (solo si hay más de 1 foto)
         const botonesHTML = imagenes.length > 1 ? `
             <a class="prev" onclick="moverSlide(event, ${p.id}, -1)">&#10094;</a>
             <a class="next" onclick="moverSlide(event, ${p.id}, 1)">&#10095;</a>
         ` : '';
 
+        // ========== GENERAR ESTRELLAS ==========
+        const rating = parseFloat(p.rating_promedio || 0);
+        const totalRatings = p.total_ratings || 0;
+        let estrellas = '';
+        
+        for (let i = 1; i <= 5; i++) {
+            if (i <= Math.floor(rating)) {
+                estrellas += '<i class="fa-solid fa-star" style="color:#fbbf24;"></i>';
+            } else if (i === Math.ceil(rating) && rating % 1 !== 0) {
+                estrellas += '<i class="fa-solid fa-star-half-stroke" style="color:#fbbf24;"></i>';
+            } else {
+                estrellas += '<i class="fa-regular fa-star" style="color:#475569;"></i>';
+            }
+        }
+
+        const ratingHTML = totalRatings > 0 
+            ? `<div style="margin:0.5rem 0; font-size:0.9em;">
+                ${estrellas}
+                <span style="color:var(--gray-text); margin-left:5px;">(${totalRatings})</span>
+               </div>`
+            : '<div style="margin:0.5rem 0; font-size:0.9em; color:var(--gray-text);">Sin calificaciones</div>';
+
         const card = document.createElement('div');
         card.className = 'card';
-        
-        // IMPORTANTE: Agregamos onclick a la tarjeta completa
         card.style.cursor = 'pointer';
+        
         card.onclick = (e) => {
-            // Si el clic fue en las flechas del carrusel, no abrir modal
-            if (e.target.classList.contains('prev') || e.target.classList.contains('next')) {
+            if (e.target.classList.contains('prev') || 
+                e.target.classList.contains('next') ||
+                e.target.classList.contains('btn-primary') || 
+                e.target.closest('.btn-primary')) {
                 return;
             }
-            // Si el clic fue en el botón de agregar, no abrir modal
-            if (e.target.classList.contains('btn-primary') || e.target.closest('.btn-primary')) {
-                return;
-            }
-            // En cualquier otra parte de la tarjeta, abrir modal
             abrirModal(p);
         };
 
@@ -280,6 +297,7 @@ function renderProductos(products) {
             </div>
             <div class="card-body">
                 <h3 class="card-title">${p.nombre}</h3>
+                ${ratingHTML}
                 <p class="card-text">${p.descripcion || ''}</p>
                 <p style="color:#aaa; font-size:0.8em;">Stock: ${p.stock}</p>
                 <div class="card-footer">
@@ -378,6 +396,29 @@ function abrirModal(producto) {
     document.getElementById('modalPrice').textContent = '$' + parseFloat(producto.precio).toLocaleString();
     document.getElementById('modalDescription').textContent = producto.descripcion || 'Sin descripción disponible';
     
+    const rating = parseFloat(producto.rating_promedio || 0);
+const totalRatings = producto.total_ratings || 0;
+let estrellasHTML = '';
+
+for (let i = 1; i <= 5; i++) {
+    if (i <= Math.floor(rating)) {
+        estrellasHTML += '<i class="fa-solid fa-star" style="color:#fbbf24;"></i>';
+    } else if (i === Math.ceil(rating) && rating % 1 !== 0) {
+        estrellasHTML += '<i class="fa-solid fa-star-half-stroke" style="color:#fbbf24;"></i>';
+    } else {
+        estrellasHTML += '<i class="fa-regular fa-star" style="color:#475569;"></i>';
+    }
+}
+
+const ratingInfo = totalRatings > 0 
+    ? `<div style="margin-bottom:1rem; display:flex; align-items:center; gap:0.5rem;">
+        ${estrellasHTML}
+        <span style="color:var(--gray-text);">(${totalRatings} calificaciones)</span>
+       </div>`
+    : '<div style="margin-bottom:1rem; color:var(--gray-text);">Sin calificaciones aún</div>';
+
+
+
     const stockEl = document.getElementById('modalStock');
     stockEl.textContent = `Stock: ${producto.stock}`;
     stockEl.className = 'modal-stock';

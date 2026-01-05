@@ -36,7 +36,7 @@ CREATE TABLE order_items (
 
 INSERT INTO users (nombre, email, password, rol)
 VALUES (
-  'Administrador',
+  'Administrador2',
   'admin@novastore.com',
   '$2b$10$rNy8RBRLchW6K5F/0hNDveZAUioAkoIJAo9HWObM6rtG7Plp/2sva',
   'admin'
@@ -99,63 +99,6 @@ INSERT INTO users (nombre, email, password, rol) VALUES
 -- inserts de clientes
 
 USE novastore;
-
-INSERT INTO products (nombre, descripcion, precio, imagen) VALUES 
-('iPhone 15 Pro', 'Titanio, Chip A17 Pro, la potencia definitiva.', 23999.00, '/img/default.png'),
-('Samsung Galaxy S24 Ultra', 'IA integrada, cámara de 200MP y S-Pen.', 26500.00, '/img/default.png'),
-('MacBook Air M3', 'Diseño ultradelgado, chip M3 superrápido.', 22499.00, '/img/default.png'),
-('Sony WH-1000XM5', 'Cancelación de ruido líder en la industria.', 6500.00, '/img/default.png'),
-('Nintendo Switch OLED', 'Pantalla vibrante de 7 pulgadas, modo portátil.', 6999.00, '/img/default.png'),
-('PlayStation 5 Slim', 'Diseño compacto, 1TB SSD, gráficos 4K.', 10999.00, '/img/default.png'),
-('Xbox Series X', 'La consola más potente de Microsoft.', 11500.00, '/img/default.png'),
-('iPad Air 5ta Gen', 'Pantalla Liquid Retina, Chip M1.', 13500.00, '/img/default.png'),
-('Apple Watch Series 9', 'Doble toque mágico, pantalla siempre activa.', 8999.00, '/img/default.png'),
-('Samsung Galaxy Watch 6', 'Monitor de salud avanzado, diseño clásico.', 5500.00, '/img/default.png'),
-('AirPods Pro 2', 'Audio espacial personalizado, USB-C.', 4999.00, '/img/default.png'),
-('Bose SoundLink Flex', 'Altavoz Bluetooth resistente al agua y polvo.', 3200.00, '/img/default.png'),
-('GoPro Hero 12 Black', 'Video 5.3K, estabilización HyperSmooth 6.0.', 8200.00, '/img/default.png'),
-('Monitor LG UltraWide 34"', 'Pantalla inmersiva 21:9 para productividad.', 7800.00, '/img/default.png'),
-('Teclado Mecánico Keychron K2', 'Switches Gateron, retroiluminación RGB.', 2100.00, '/img/default.png'),
-('Mouse Logitech MX Master 3S', 'Precisión extrema, silencioso y ergonómico.', 1800.00, '/img/default.png'),
-('Google Pixel 8 Pro', 'La mejor cámara con IA de Google.', 19500.00, '/img/default.png'),
-('Xiaomi 13T Pro', 'Cámaras Leica, carga rápida 120W.', 12500.00, '/img/default.png'),
-('ASUS ROG Zephyrus G14', 'Laptop gamer compacta y potente.', 32000.00, '/img/default.png'),
-('Dell XPS 13 Plus', 'Diseño futurista, pantalla OLED táctil.', 29000.00, '/img/default.png'),
-('Kindle Paperwhite', 'Lectura sin reflejos, luz cálida ajustable.', 2800.00, '/img/default.png'),
-('Echo Dot 5ta Gen', 'Asistente Alexa con mejor sonido.', 1200.00, '/img/default.png'),
-('Google Nest Hub 2', 'Pantalla inteligente con control de sueño.', 1900.00, '/img/default.png'),
-('Cámara Sony Alpha a6400', 'Enfoque automático rápido, video 4K.', 18500.00, '/img/default.png'),
-('Drone DJI Mini 3', 'Ligero, video 4K HDR, vuelo vertical.', 14000.00, '/img/default.png'),
-('Disco SSD Samsung 990 Pro 1TB', 'Velocidad máxima para PC y PS5.', 3500.00, '/img/default.png'),
-('Tarjeta Gráfica RTX 4070', 'NVIDIA DLSS 3, Ray Tracing ultra.', 14500.00, '/img/default.png'),
-('Procesador Ryzen 7 7800X3D', 'El mejor CPU para gaming actualmente.', 8900.00, '/img/default.png'),
-('Memoria RAM Corsair 32GB DDR5', 'Alto rendimiento, 6000MHz.', 2800.00, '/img/default.png'),
-('Fuente de Poder 850W Gold', 'Certificación 80 Plus, modular.', 2500.00, '/img/default.png'),
-('Gabinete NZXT H5 Flow', 'Flujo de aire optimizado, panel de vidrio.', 2100.00, '/img/default.png'),
-('Silla Gamer Secretlab Titan', 'Comodidad ergonómica premium.', 9500.00, '/img/default.png'),
-('Escritorio Elevable Automático', 'Ajuste de altura eléctrico, memoria.', 7200.00, '/img/default.png'),
-('Webcam Logitech Brio 4K', 'Calidad profesional para streaming.', 3800.00, '/img/default.png'),
-('Micrófono HyperX QuadCast S', 'Iluminación RGB, condensador USB.', 2900.00, '/img/default.png'),
-('Router WiFi 6 ASUS AX3000', 'Velocidad gigabit, baja latencia.', 2600.00, '/img/default.png'),
-('Smart TV Samsung Neo QLED 55"', 'Resolución 4K, 120Hz para gaming.', 18000.00, '/img/default.png'),
-('Barra de Sonido JBL Bar 5.0', 'Sonido envolvente Multibeam.', 6500.00, '/img/default.png'),
-('Chromecast con Google TV', 'Streaming 4K con control de voz.', 1300.00, '/img/default.png'),
-('Roku Streaming Stick 4K', 'Portátil, largo alcance WiFi.', 1100.00, '/img/default.png'),
-('Cargador Anker 65W GaN', 'Carga rápida compacta para laptop y cel.', 900.00, '/img/default.png'),
-('Power Bank Xiaomi 20000mAh', 'Batería externa de alta capacidad.', 850.00, '/img/default.png'),
-('Mochila Antirrobo Tech', 'Impermeable, puerto USB de carga.', 1200.00, '/img/default.png'),
-('Hub USB-C 8 en 1', 'HDMI, Ethernet, SD, USB 3.0.', 800.00, '/img/default.png'),
-('Soporte Laptop Aluminio', 'Ajustable, disipación de calor.', 600.00, '/img/default.png'),
-('Cable HDMI 2.1 8K', 'Alta velocidad certificado ultra.', 450.00, '/img/default.png'),
-('Kit Tiras LED Philips Hue', 'Iluminación inteligente ambiental.', 1900.00, '/img/default.png'),
-('Enchufe Inteligente TP-Link', 'Control remoto y horarios via app.', 350.00, '/img/default.png'),
-('Foco Inteligente Wiz Color', 'Millones de colores, WiFi.', 250.00, '/img/default.png'),
-('Tablet Samsung Galaxy Tab S9', 'Resistente al agua, pantalla AMOLED.', 16500.00, '/img/default.png');
-
-
-
-select * from users;
-
 
 
 CREATE TABLE categories (
@@ -315,7 +258,6 @@ SET p.imagen = '/img/foco.jpg';
 SELECT nombre, imagen FROM products;
 
 
--- Actualizaciones para la segunda parte del proyecto
 
 USE novastore;
 -- Agregar columna stock (por defecto 0 si no se especifica)
@@ -337,3 +279,71 @@ CREATE TABLE IF NOT EXISTS product_images (
 -- 2. Asegurarnos que la tabla products tenga stock (si no lo hiciste en el paso anterior)
 -- Si ya lo hiciste y te da error, ignora esta línea.
 ALTER TABLE products ADD COLUMN stock INT DEFAULT 0;
+
+select * from products;
+
+
+USE novastore;
+
+-- ============================================
+-- 1. TABLA DE MÉTODOS DE PAGO
+-- ============================================
+CREATE TABLE payment_methods (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    tipo ENUM('credito', 'debito', 'paypal') NOT NULL,
+    nombre_titular VARCHAR(100) NOT NULL,
+    ultimos_digitos VARCHAR(4) NOT NULL,  -- Solo guardamos los últimos 4 dígitos por seguridad
+    fecha_expiracion VARCHAR(7),           -- Formato: MM/YYYY
+    es_principal BOOLEAN DEFAULT FALSE,
+    fecha_registro TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- ============================================
+-- 2. AGREGAR MÉTODO DE PAGO A ORDERS
+-- ============================================
+ALTER TABLE orders 
+ADD COLUMN payment_method_id INT,
+ADD COLUMN estado ENUM('pendiente', 'pagado', 'cancelado') DEFAULT 'pagado',
+ADD FOREIGN KEY (payment_method_id) REFERENCES payment_methods(id);
+
+-- ============================================
+-- 3. TABLA DE CALIFICACIONES
+-- ============================================
+CREATE TABLE product_ratings (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    product_id INT NOT NULL,
+    user_id INT NOT NULL,
+    order_id INT NOT NULL,
+    rating INT NOT NULL CHECK (rating >= 1 AND rating <= 5),
+    comentario TEXT,
+    fecha TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_rating (product_id, user_id, order_id) -- Un usuario solo puede calificar una vez por orden
+);
+
+-- ============================================
+-- 4. AGREGAR COLUMNA DE RATING PROMEDIO EN PRODUCTS
+-- ============================================
+ALTER TABLE products 
+ADD COLUMN rating_promedio DECIMAL(3,2) DEFAULT 0.00,
+ADD COLUMN total_ratings INT DEFAULT 0;
+
+-- ============================================
+-- 5. ÍNDICES PARA MEJORAR RENDIMIENTO
+-- ============================================
+CREATE INDEX idx_payment_user ON payment_methods(user_id);
+CREATE INDEX idx_ratings_product ON product_ratings(product_id);
+CREATE INDEX idx_ratings_user ON product_ratings(user_id);
+
+-- ============================================
+-- 6. VERIFICAR ESTRUCTURA
+-- ============================================
+SHOW TABLES;
+DESC payment_methods;
+DESC product_ratings;
+DESC products;
+DESC orders;

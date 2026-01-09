@@ -129,6 +129,20 @@
                                 <input id="pStock" type="number" placeholder="Stock" style="width:80px; padding:8px; border-radius:4px; border:none;">
                             </div>
                             
+                            <div style="display:flex; flex-direction:column; gap:5px;">
+                                <select id="pCategoria" style="padding:8px; border-radius:4px; border:none; height: 35px;">
+                                    <option value="">Selecciona Categoría...</option>
+                                    <option value="1">Celulares</option>
+                                    <option value="2">Auriculares</option>
+                                    <option value="3">Smartphones</option>
+                                    <option value="4">Computadoras</option>
+                                    <option value="5">Accesorios</option>
+                                    <option value="6">Gaming</option>
+                                    <option value="7">Smart Home</option>
+                                </select>
+                            </div>
+
+
                             <div style="display:flex; flex-direction:column;">
                                 <label style="color:white; font-size:0.8em; margin-bottom:2px;">Fotos (Max 5):</label>
                                 <input type="file" id="pFotos" multiple accept="image/*" style="color:white; font-size:0.9em;">
@@ -353,50 +367,79 @@ if(document.getElementById('pNombre')) {
         cargarVista(vistaActual);
     }
 
-    // --- OPERACIONES CRUD: PRODUCTOS ---
-
-// PEGAR ESTO DENTRO DE LAS ETIQUETAS <script> EN ADMIN.HTML
+// --- OPERACIONES CRUD: PRODUCTOS ---
 
 async function crearProductoConFotos() {
+    // 1. OBTENER ELEMENTOS
     const nombre = document.getElementById('pNombre').value;
     const descripcion = document.getElementById('pDesc').value;
     const precio = document.getElementById('pPrecio').value;
     const stock = document.getElementById('pStock').value;
+    
+    // Validamos si existe el select de categoría antes de leer su valor
+    const catElement = document.getElementById('pCategoria');
+    const categoria = catElement ? catElement.value : null; 
+    
     const fileInput = document.getElementById('pFotos');
+    
+    // Referencia al botón para bloquearlo
+    // NOTA: Asegúrate de que tu botón en el HTML no tenga ID o usa querySelector
+    // Si usaste mi código anterior, el botón llama a la función onclick.
+    // Vamos a buscar el botón que contiene el texto "+ Publicar" o usa event.target si lo pasas
+    const btnPublicar = document.querySelector('button[onclick="crearProductoConFotos()"]');
 
-    // Validaciones
-    if(!nombre || !precio) return alert("Nombre y Precio requeridos");
-    // Validación opcional: quitar si quieres permitir crear sin fotos
-    // if(fileInput.files.length === 0) return alert("Debes seleccionar al menos una imagen");
+    // 2. VALIDACIONES
+    if(!nombre || !precio) return alert("Nombre y Precio obligatorios");
+    if(catElement && !categoria) return alert("Debes seleccionar una categoría");
 
+    // 3. FEEDBACK VISUAL (Evita que des mil clics)
+    if(btnPublicar) {
+        btnPublicar.disabled = true;
+        btnPublicar.textContent = "⏳ Guardando...";
+    }
+
+    // 4. PREPARAR DATOS
     const formData = new FormData();
     formData.append('nombre', nombre);
     formData.append('descripcion', descripcion);
     formData.append('precio', precio);
     formData.append('stock', stock);
+    if(categoria) formData.append('categoria', categoria);
 
-    // Agregamos cada archivo seleccionado
     for (let i = 0; i < fileInput.files.length; i++) {
         formData.append('imagenes', fileInput.files[i]);
     }
 
     try {
-        const res = await fetch('/products', {
-            method: 'POST',
-            body: formData 
-        });
+        console.log("Enviando petición al servidor..."); // Log para depurar
+        
+        const res = await fetch('/products', { method: 'POST', body: formData });
 
         if(res.ok) {
-            alert("Producto creado exitosamente");
-            // Recargar la vista actual (usa la variable global vistaActual)
-            cargarVista(vistaActual); 
+            // 5. ÉXITO (El alert va PRIMERO para asegurar que lo veas)
+            alert("✅ Producto creado exitosamente");
+            
+            // Recargamos la vista
+            if(typeof cargarVista === 'function') {
+                // Verificamos si vistaActual existe, si no, usamos 'productos' por defecto
+                const vista = (typeof vistaActual !== 'undefined') ? vistaActual : 'productos';
+                cargarVista(vista);
+            } else {
+                location.reload(); // Si falla cargarVista, recargamos la página completa
+            }
         } else {
             const errorTxt = await res.text();
-            alert("Error al crear: " + errorTxt);
+            alert("❌ Error del servidor: " + errorTxt);
         }
     } catch (error) {
-        console.error(error);
-        alert("Error de conexión");
+        console.error("Error en el frontend:", error);
+        alert("❌ Error de conexión (Revisa la consola con F12)");
+    } finally {
+        // 6. RESTAURAR BOTÓN (Pase lo que pase, reactivamos el botón)
+        if(btnPublicar) {
+            btnPublicar.disabled = false;
+            btnPublicar.textContent = "+ Publicar";
+        }
     }
 }
 

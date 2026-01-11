@@ -35,18 +35,26 @@
         <button class="tab-btn" onclick="cargarVista('productos')">
             <i class="fa-solid fa-box-open"></i> Productos
         </button>
+        <button class="tab-btn" onclick="cargarVista('reportes')">
+            <i class="fa-solid fa-chart-line"></i> Reportes
+        </button>
+
     </div>
 
     <div class="table-container">
+    
+    <div id="vista-crud">
         <div id="action-bar" class="action-bar"></div>
-
         <table class="data-table">
-            <thead id="table-head">
-                </thead>
-            <tbody id="table-body">
-                </tbody>
+            <thead id="table-head"></thead>
+            <tbody id="table-body"></tbody>
         </table>
     </div>
+
+    <div id="vista-reportes" style="display:none;">
+        </div>
+
+</div>
 </section>
 
 <script>
@@ -56,127 +64,179 @@
 
     // --- FUNCIÓN PRINCIPAL (ROUTER DEL FRONTEND) ---
     async function cargarVista(vista) {
-        vistaActual = vista;
-        limpiarFormulario(); // Reseteamos formularios y variables al cambiar de pestaña
-        
-        // 1. Actualizar estilos de las pestañas (Tabs)
-        document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
-        if(event && event.target) {
-            const btn = event.target.closest('button');
-            if(btn) btn.classList.add('active');
-        }
+    vistaActual = vista;
+    limpiarFormulario();
+    
+    // 1. Actualizar estilos de las pestañas
+    document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+    if(event && event.target) {
+        const btn = event.target.closest('button');
+        if(btn) btn.classList.add('active');
+    }
 
-        const tableHead = document.getElementById('table-head');
-        const tableBody = document.getElementById('table-body');
-        const actionBar = document.getElementById('action-bar');
+    // Referencias a los contenedores principales
+    const divCrud = document.getElementById('vista-crud');
+    const divReportes = document.getElementById('vista-reportes');
+
+    // Referencias a los elementos del CRUD
+    const tableHead = document.getElementById('table-head');
+    const tableBody = document.getElementById('table-body');
+    const actionBar = document.getElementById('action-bar');
+
+    // ==========================================
+    // LOGICA DE VISIBILIDAD (SWITCH)
+    // ==========================================
+    
+    if (vista === 'reportes') {
+        // MODO REPORTE: Ocultamos el CRUD, mostramos el Reporte
+        divCrud.style.display = 'none';
+        divReportes.style.display = 'block';
         
-        // Mostrar estado de carga
-        tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem;">Cargando datos...</td></tr>';
-        actionBar.innerHTML = ''; 
+        // Mensaje de carga
+        divReportes.innerHTML = '<h3 style="color:white; text-align:center; padding:20px;">Cargando reporte...</h3>';
 
         try {
-            // ==========================================
-            // CASO 1: CLIENTES O VENDEDORES
-            // ==========================================
-            if (vista === 'clientes' || vista === 'vendedores') {
-                const rol = vista === 'clientes' ? 'cliente' : 'vendedor';
+            const res = await fetch('/admin/report');
+            const data = await res.json();
+            const mas = data.estadisticas.masVendido;
+            const menos = data.estadisticas.menosVendido;
 
-                // Inyectar Formulario de Usuarios
-                actionBar.innerHTML = `
+            // Inyectamos el HTML del reporte
+            divReportes.innerHTML = `
+                <div style="padding: 20px;">
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px; margin-bottom:30px;">
+                        <div style="background: linear-gradient(135deg, #059669 0%, #10b981 100%); padding:20px; border-radius:12px; color:white; display:flex; align-items:center; gap:15px;">
+                            <i class="fa-solid fa-trophy" style="font-size:2.5rem;"></i>
+                            <div>
+                                <div style="opacity:0.9;">Más Vendido</div>
+                                <div style="font-size:1.4rem; font-weight:bold;">${mas ? mas.nombre : 'Sin ventas'}</div>
+                                <div>Total: ${mas ? mas.total_vendido : 0} unidades</div>
+                            </div>
+                        </div>
+                        <div style="background: linear-gradient(135deg, #b91c1c 0%, #ef4444 100%); padding:20px; border-radius:12px; color:white; display:flex; align-items:center; gap:15px;">
+                            <i class="fa-solid fa-arrow-down" style="font-size:2.5rem;"></i>
+                            <div>
+                                <div style="opacity:0.9;">Menos Vendido</div>
+                                <div style="font-size:1.4rem; font-weight:bold;">${menos ? menos.nombre : 'Sin ventas'}</div>
+                                <div>Total: ${menos ? menos.total_vendido : 0} unidades</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3 style="color:white; margin-bottom:15px;">Historial de Transacciones</h3>
+                    <div style="background:var(--card-bg); border-radius:8px; overflow:hidden;">
+                        <table class="data-table" style="margin:0;">
+                            <thead>
+                                <tr>
+                                    <th>Folio</th><th>Fecha</th><th>Producto</th><th>Cant.</th><th>Total</th><th>Cliente</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${data.historial.map(v => `
+                                    <tr>
+                                        <td>#${v.folio}</td>
+                                        <td>${v.fecha}</td>
+                                        <td><strong>${v.producto}</strong></td>
+                                        <td style="text-align:center;">${v.cantidad}</td>
+                                        <td>$${v.total}</td>
+                                        <td style="color:#94a3b8; font-size:0.9em;">${v.cliente}</td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        } catch (error) {
+            console.error(error);
+            divReportes.innerHTML = '<p style="color:red; text-align:center;">Error al cargar reporte</p>';
+        }
+
+    } else {
+        // MODO NORMAL (Clientes, Vendedores, Productos)
+        // Ocultamos Reportes, mostramos CRUD
+        divReportes.style.display = 'none';
+        divCrud.style.display = 'block';
+
+        // Limpiamos contenido previo
+        actionBar.innerHTML = '';
+        tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; padding:2rem;">Cargando datos...</td></tr>';
+
+        try {
+            // ... (AQUÍ SIGUE TU CÓDIGO NORMAL DE SIEMPRE) ...
+            if (vista === 'clientes' || vista === 'vendedores') {
+                 // ... (Copia tu lógica de clientes/vendedores aquí) ...
+                 const rol = vista === 'clientes' ? 'cliente' : 'vendedor';
+                 
+                 actionBar.innerHTML = `
                     <div class="inline-form">
                         <input id="uNombre" placeholder="Nombre completo" />
                         <input id="uEmail" placeholder="Correo electrónico" />
                         <input id="uPass" type="password" placeholder="Contraseña" />
-                        
                         <button class="btn-primary" onclick="crearUsuario('${rol}')">+ Agregar</button>
-                        
                         <button id="btnUpdate" class="btn-primary" onclick="actualizarUsuario()" style="display:none; background-color: #f59e0b; margin-left:5px;">Actualizar</button>
                         <button id="btnCancel" class="btn-delete" onclick="limpiarFormulario()" style="display:none; margin-left:5px;">Cancelar</button>
                     </div>
-                `;
+                 `;
 
-                // Inyectar Encabezados
-                const extraHeader = vista === 'vendedores' ? 'Ventas' : 'Rol';
-                tableHead.innerHTML = `
-                    <tr>
-                        <th>ID</th><th>Nombre</th><th>Email</th><th>${extraHeader}</th><th>Acciones</th>
-                    </tr>
-                `;
+                 const extraHeader = vista === 'vendedores' ? 'Ventas' : 'Rol';
+                 tableHead.innerHTML = `<tr><th>ID</th><th>Nombre</th><th>Email</th><th>${extraHeader}</th><th>Acciones</th></tr>`;
 
-                // Fetch y Renderizado
-                const res = await fetch(`/admin/users?rol=${rol}`);
-                const data = await res.json();
-                renderUsers(data);
+                 const res = await fetch(`/admin/users?rol=${rol}`);
+                 const data = await res.json();
+                 renderUsers(data);
 
-
-            // ==========================================
-            // CASO 2: PRODUCTOS (ACTUALIZADO CON STOCK)
-            // ==========================================
             } else if (vista === 'productos') {
+                // ... (Copia tu lógica de productos aquí) ...
                 
-                // Inyectar Formulario de Productos (AHORA CON INPUT DE STOCK)
-               // Copia esto dentro de tu actionBar.innerHTML
-                    actionBar.innerHTML = `
-                        <div style="background:#334155; padding:15px; border-radius:8px; display:flex; gap:10px; align-items:flex-end; flex-wrap: wrap;">
-                            
-                            <div style="display:flex; flex-direction:column; gap:5px;">
-                                <input id="pNombre" placeholder="Nombre Producto" style="padding:8px; border-radius:4px; border:none;">
-                                <input id="pDesc" placeholder="Descripción" style="padding:8px; border-radius:4px; border:none;">
-                            </div>
-
-                            <div style="display:flex; flex-direction:column; gap:5px;">
-                                <input id="pPrecio" type="number" placeholder="$ Precio" style="width:80px; padding:8px; border-radius:4px; border:none;">
-                                <input id="pStock" type="number" placeholder="Stock" style="width:80px; padding:8px; border-radius:4px; border:none;">
-                            </div>
-                            
-                            <div style="display:flex; flex-direction:column; gap:5px;">
-                                <select id="pCategoria" style="padding:8px; border-radius:4px; border:none; height: 35px;">
-                                    <option value="">Selecciona Categoría...</option>
-                                    <option value="1">Celulares</option>
-                                    <option value="2">Auriculares</option>
-                                    <option value="3">Smartphones</option>
-                                    <option value="4">Computadoras</option>
-                                    <option value="5">Accesorios</option>
-                                    <option value="6">Gaming</option>
-                                    <option value="7">Smart Home</option>
-                                </select>
-                            </div>
-
-
-                            <div style="display:flex; flex-direction:column;">
-                                <label style="color:white; font-size:0.8em; margin-bottom:2px;">Fotos (Max 5):</label>
-                                <input type="file" id="pFotos" multiple accept="image/*" style="color:white; font-size:0.9em;">
-                            </div>
-
-                            <button class="btn-primary" onclick="crearProductoConFotos()">+ Publicar</button>
-                            
-                            <button id="btnUpdateP" class="btn-primary" onclick="actualizarProducto()" style="display:none; background-color: #f59e0b; margin-left:5px;">Actualizar Datos</button>
-                            <button id="btnCancelP" class="btn-delete" onclick="limpiarFormulario()" style="display:none; margin-left:5px;">Cancelar</button>
+                // INYECTAR FORMULARIO DE PRODUCTOS (PEGA AQUÍ TU HTML LARGO DEL FORMULARIO DE PRODUCTOS QUE YA TENÍAS)
+                actionBar.innerHTML = `
+                    <div style="background:#334155; padding:15px; border-radius:8px; display:flex; gap:10px; align-items:flex-end; flex-wrap: wrap;">
+                        <div style="display:flex; flex-direction:column; gap:5px;">
+                            <input id="pNombre" placeholder="Nombre Producto" style="padding:8px; border-radius:4px; border:none;">
+                            <input id="pDesc" placeholder="Descripción" style="padding:8px; border-radius:4px; border:none;">
                         </div>
-                    `;
-
-                // Inyectar Encabezados (AHORA CON COLUMNA STOCK)
-                tableHead.innerHTML = `
-                    <tr>
-                        <th>ID</th>
-                        <th>Img</th>
-                        <th>Producto</th>
-                        <th>Descripción</th>
-                        <th>Precio</th>
-                        <th>Stock</th> <th>Acciones</th>
-                    </tr>
+                        <div style="display:flex; flex-direction:column; gap:5px;">
+                            <input id="pPrecio" type="number" placeholder="$ Precio" style="width:80px; padding:8px; border-radius:4px; border:none;">
+                            <input id="pStock" type="number" placeholder="Stock" style="width:80px; padding:8px; border-radius:4px; border:none;">
+                        </div>
+                        <div style="display:flex; flex-direction:column; gap:5px;">
+                            <select id="pCategoria" style="padding:8px; border-radius:4px; border:none; height: 35px;">
+                                <option value="">Selecciona Categoría...</option>
+                                <option value="1">Celulares</option>
+                                <option value="2">Auriculares</option>
+                                <option value="3">Smartphones</option>
+                                <option value="4">Computadoras</option>
+                                <option value="5">Accesorios</option>
+                                <option value="6">Gaming</option>
+                                <option value="7">Smart Home</option>
+                            </select>
+                        </div>
+                        <div style="display:flex; flex-direction:column;">
+                             <label style="color:white; font-size:0.8em; margin-bottom:2px;">Fotos (Max 5):</label>
+                             <input type="file" id="pFotos" multiple accept="image/*" style="color:white; font-size:0.9em;">
+                        </div>
+                        <button class="btn-primary" onclick="crearProductoConFotos()">+ Publicar</button>
+                        <button id="btnUpdateP" class="btn-primary" onclick="actualizarProducto()" style="display:none; background-color: #f59e0b; margin-left:5px;">Actualizar</button>
+                        <button id="btnCancelP" class="btn-delete" onclick="limpiarFormulario()" style="display:none; margin-left:5px;">Cancelar</button>
+                    </div>
                 `;
+
+                tableHead.innerHTML = `<tr><th>ID</th><th>Img</th><th>Producto</th><th>Descripción</th><th>Precio</th><th>Stock</th><th>Acciones</th></tr>`;
                 
-                // Fetch y Renderizado
                 const res = await fetch('/products');
                 const data = await res.json();
                 renderProducts(data);
             }
+
         } catch (error) {
             console.error(error);
-            tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">Error de conexión con el servidor</td></tr>';
+            tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:red;">Error de conexión</td></tr>';
         }
     }
+}
+
+
 
     // --- FUNCIONES DE RENDERIZADO (DIBUJAR TABLAS) ---
 

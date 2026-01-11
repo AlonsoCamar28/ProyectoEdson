@@ -82,3 +82,55 @@ exports.deleteUser = (req, res) => {
         res.sendStatus(200);
     });
 };
+
+// --- 5. REPORTE DE VENTAS (NUEVO) ---
+exports.getSalesReport = (req, res) => {
+    // Consulta 1: Historial de ventas detallado (Tabla)
+    const sqlVentas = `
+        SELECT 
+            o.id as folio,
+            DATE_FORMAT(o.fecha, '%d/%m/%Y %H:%i') as fecha,
+            p.nombre as producto,
+            oi.cantidad,
+            p.precio,
+            (oi.cantidad * p.precio) as total,
+            u.email as cliente
+        FROM order_items oi
+        JOIN orders o ON oi.order_id = o.id
+        JOIN products p ON oi.product_id = p.id
+        JOIN users u ON o.user_id = u.id
+        ORDER BY o.fecha DESC
+    `;
+
+    // Consulta 2: Ranking (Más y Menos vendido)
+    const sqlRanking = `
+        SELECT p.nombre, SUM(oi.cantidad) as total_vendido
+        FROM order_items oi
+        JOIN products p ON oi.product_id = p.id
+        GROUP BY p.id
+        ORDER BY total_vendido DESC
+    `;
+
+    db.query(sqlVentas, (err, ventas) => {
+        if (err) {
+            console.error(err);
+            return res.status(500).send('Error obteniendo ventas');
+        }
+
+        db.query(sqlRanking, (err2, ranking) => {
+            if (err2) {
+                console.error(err2);
+                return res.status(500).send('Error obteniendo ranking');
+            }
+
+            // Identificar extremos
+            const masVendido = ranking.length > 0 ? ranking[0] : null;
+            const menosVendido = ranking.length > 0 ? ranking[ranking.length - 1] : null;
+
+            res.json({
+                historial: ventas,
+                estadisticas: { masVendido, menosVendido }
+            });
+        });
+    });
+};
